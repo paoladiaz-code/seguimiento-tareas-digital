@@ -48,8 +48,18 @@
         ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
         
         /* Animación suave para hover de tarjetas */
-        .hover-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .hover-card { transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
         .hover-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+
+        /* Animaciones para el Panel Lateral */
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .slide-in-right { animation: slideIn 0.3s ease-out forwards; }
+        .fade-in { animation: fadeIn 0.2s ease-out forwards; }
+        
+        /* Animación para el punto de alerta */
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .alert-pulse { animation: pulse 2s infinite; }
     </style>
 </head>
 <body class="text-slate-800 font-sans p-4 md:p-8 antialiased">
@@ -73,30 +83,31 @@
 
     <!-- ZONA 1: Táctica (Lo urgente y el panorama general) -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <!-- KPI: Urgente -->
-        <div class="bg-white p-5 rounded-xl border border-red-100 shadow-sm hover-card border-l-4 border-l-urgent">
-            <div class="flex justify-between items-start">
+        <!-- KPI: Urgente (Clicable) -->
+        <div onclick="filtrarTabla('urgente')" class="bg-white p-5 rounded-xl border border-red-100 shadow-sm hover-card border-l-4 border-l-urgent relative overflow-hidden group">
+            <div class="absolute inset-0 bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative flex justify-between items-start z-10">
                 <div>
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Alertas Rojas</p>
-                    <h3 class="text-3xl font-bold text-urgent">7</h3>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 group-hover:text-red-700 transition">Alertas Rojas</p>
+                    <h3 class="text-3xl font-bold text-urgent group-hover:scale-110 transform origin-left transition">7</h3>
                     <p class="text-xs text-red-500 mt-2 font-medium flex items-center gap-1">
-                        <i class="ph-fill ph-warning-circle"></i> Requieren atención hoy
+                        <i class="ph-fill ph-warning-circle"></i> Ver tareas atrasadas
                     </p>
                 </div>
-                <div class="p-2 bg-red-50 rounded-lg text-urgent">
-                    <i class="ph ph-fire text-xl"></i>
+                <div class="p-2 bg-red-50 group-hover:bg-red-100 rounded-lg text-urgent transition">
+                    <i class="ph ph-fire text-xl group-hover:animate-bounce"></i>
                 </div>
             </div>
         </div>
 
         <!-- KPI: Progreso -->
-        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover-card">
+        <div onclick="filtrarTabla('progreso')" class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover-card group">
             <div class="flex justify-between items-start">
                 <div>
                     <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">En Progreso</p>
                     <h3 class="text-3xl font-bold text-slate-800">12</h3>
-                    <p class="text-xs text-slate-500 mt-2 font-medium flex items-center gap-1">
-                        <i class="ph ph-trend-up text-corp-accent"></i> 3 nuevas esta semana
+                    <p class="text-xs text-slate-500 mt-2 font-medium flex items-center gap-1 group-hover:text-amber-600 transition">
+                        <i class="ph ph-hand-tap"></i> Ver en curso
                     </p>
                 </div>
                 <div class="p-2 bg-amber-50 rounded-lg text-status-progress">
@@ -106,7 +117,7 @@
         </div>
 
         <!-- KPI: Hecho -->
-        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover-card">
+        <div onclick="filtrarTabla('hecho')" class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover-card">
             <div class="flex justify-between items-start">
                 <div>
                     <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Completadas</p>
@@ -122,13 +133,13 @@
         </div>
         
         <!-- KPI: Carga Total -->
-        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover-card">
+        <div onclick="filtrarTabla('all')" class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover-card group">
             <div class="flex justify-between items-start">
                 <div>
                     <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Activas</p>
                     <h3 class="text-3xl font-bold text-slate-800">47</h3>
-                    <p class="text-xs text-slate-500 mt-2 font-medium">
-                        Repartidas en 5 categorías
+                    <p class="text-xs text-slate-500 mt-2 font-medium group-hover:text-corp-accent transition">
+                        Ver todas
                     </p>
                 </div>
                 <div class="p-2 bg-slate-100 rounded-lg text-slate-600">
@@ -139,6 +150,38 @@
     </div>
 
     <!-- ZONA 2: Gestión (Análisis de carga y estado) -->
+    <!-- NUEVO: Salud del Equipo y Alertas -->
+    <div class="mb-6 flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+        <div class="text-sm font-semibold text-slate-600 flex items-center gap-2 border-r border-slate-200 pr-4">
+            <i class="ph ph-users text-lg"></i> Estado del Equipo:
+        </div>
+        
+        <div class="flex gap-4 overflow-x-auto">
+            <!-- Alerta Crítica (Paola) -->
+            <button onclick="filtrarTabla('Paola')" class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-red-200 bg-red-50 hover:bg-red-100 transition relative">
+                <div class="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-bold ring-2 ring-red-400 alert-pulse">P</div>
+                <span class="text-sm font-medium text-slate-700">Paola <span class="text-xs text-red-600 ml-1">(4 Altas)</span></span>
+            </button>
+
+             <!-- Carga Media (Ruben) -->
+             <button onclick="filtrarTabla('Ruben')" class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 hover:bg-slate-50 transition">
+                <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">R</div>
+                <span class="text-sm font-medium text-slate-700">Ruben</span>
+            </button>
+            
+            <!-- Carga Media (Valeria) -->
+            <button onclick="filtrarTabla('Valeria')" class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 hover:bg-slate-50 transition">
+                <div class="w-6 h-6 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center text-xs font-bold">V</div>
+                <span class="text-sm font-medium text-slate-700">Valeria</span>
+            </button>
+
+            <button onclick="filtrarTabla('Anto')" class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 hover:bg-slate-50 transition">
+                <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">A</div>
+                <span class="text-sm font-medium text-slate-700">Anto</span>
+            </button>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         
         <!-- Gráfico de Carga de Trabajo Real (Barras Apiladas) -->
@@ -166,16 +209,14 @@
     </div>
 
     <!-- ZONA 3: Operativa (La tabla de acción) -->
-    <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden" id="tabla-operativa">
         <div class="p-5 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <h2 class="text-lg font-bold text-slate-800">Registro Operativo de Tareas</h2>
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                Registro Operativo <span id="filtro-activo" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hidden">Filtro</span>
+            </h2>
             
-            <!-- Simulador de Filtros -->
             <div class="flex flex-wrap gap-2">
-                <span class="text-xs font-semibold text-slate-500 py-2">Filtros Rápidos:</span>
-                <button class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-xs font-medium transition">Mis Tareas (Paola)</button>
-                <button class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-urgent border border-red-100 rounded-full text-xs font-medium transition">Solo Urgentes</button>
-                <button class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-status-progress border border-amber-100 rounded-full text-xs font-medium transition">En Progreso</button>
+                <button onclick="filtrarTabla('all')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-xs font-medium transition">Quitar Filtros</button>
             </div>
         </div>
 
@@ -186,98 +227,122 @@
                         <th class="p-4 font-semibold">Categoría / Proyecto</th>
                         <th class="p-4 font-semibold">Acción Específica</th>
                         <th class="p-4 font-semibold">Responsable</th>
-                        <th class="p-4 font-semibold">Fecha</th>
-                        <th class="p-4 font-semibold">Prioridad</th>
+                        <th class="p-4 font-semibold">Fecha / Prioridad</th>
                         <th class="p-4 font-semibold">Estado</th>
+                        <th class="p-4 font-semibold text-center">Acción</th>
                     </tr>
                 </thead>
                 <tbody class="text-sm divide-y divide-slate-100">
-                    <!-- Fila 1: Urgente -->
-                    <tr class="hover:bg-slate-50 transition border-l-4 border-l-urgent bg-red-50/30">
+                    <!-- Fila 1: Urgente (Paola) -->
+                    <tr class="tarea-fila hover:bg-slate-50 transition border-l-4 border-l-urgent bg-red-50/30" data-status="urgente" data-owner="Paola">
                         <td class="p-4">
                             <span class="block font-medium text-slate-800">General</span>
                             <span class="text-xs text-slate-500">Proyecto rentabilidad IA</span>
                         </td>
                         <td class="p-4 text-slate-700">Completar info de negocio</td>
                         <td class="p-4">
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 cursor-pointer hover:text-corp-accent" onclick="filtrarTabla('Paola')">
                                 <div class="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">P</div>
                                 <span>Paola</span>
                             </div>
                         </td>
-                        <td class="p-4 text-urgent font-medium"><i class="ph ph-warning"></i> 21/07 (Vencido)</td>
-                        <td class="p-4"><span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">Alta</span></td>
+                        <td class="p-4">
+                            <span class="text-urgent font-medium block text-xs mb-1"><i class="ph ph-warning"></i> 21/07 (Vencido)</span>
+                            <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-semibold">Alta</span>
+                        </td>
                         <td class="p-4"><span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">Monitoreo</span></td>
+                        <td class="p-4 text-center">
+                            <button onclick="abrirPanelGestion('Proyecto rentabilidad IA', 'Completar info de negocio', 'Paola', 'Alta', 'Monitoreo')" class="px-3 py-1.5 bg-white border border-slate-200 text-corp-primary rounded hover:bg-slate-50 transition shadow-sm font-medium text-xs flex items-center gap-1 mx-auto">
+                                <i class="ph ph-pencil-simple"></i> Gestionar
+                            </button>
+                        </td>
                     </tr>
                     
-                    <!-- Fila 2: En Progreso -->
-                    <tr class="hover:bg-slate-50 transition border-l-4 border-l-transparent">
+                    <!-- Fila 2: En Progreso (Ruben) -->
+                    <tr class="tarea-fila hover:bg-slate-50 transition border-l-4 border-l-transparent" data-status="progreso" data-owner="Ruben">
                         <td class="p-4">
                             <span class="block font-medium text-slate-800">Proyectos</span>
                             <span class="text-xs text-slate-500">Whatsapp (Migración)</span>
                         </td>
                         <td class="p-4 text-slate-700">Proyecto Migración: FHU</td>
                         <td class="p-4">
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 cursor-pointer hover:text-corp-accent" onclick="filtrarTabla('Ruben')">
                                 <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">R</div>
                                 <span>Ruben</span>
                             </div>
                         </td>
-                        <td class="p-4 text-slate-500">27/07</td>
-                        <td class="p-4"><span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">Alta</span></td>
+                        <td class="p-4">
+                            <span class="text-slate-500 block text-xs mb-1">27/07</span>
+                            <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-semibold">Alta</span>
+                        </td>
                         <td class="p-4"><span class="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium flex items-center gap-1 w-max"><i class="ph ph-spinner-gap"></i> En progreso</span></td>
+                        <td class="p-4 text-center">
+                            <button onclick="abrirPanelGestion('Whatsapp (Migración)', 'Proyecto Migración: FHU', 'Ruben', 'Alta', 'En progreso')" class="px-3 py-1.5 bg-white border border-slate-200 text-corp-primary rounded hover:bg-slate-50 transition shadow-sm font-medium text-xs flex items-center gap-1 mx-auto">
+                                <i class="ph ph-pencil-simple"></i> Gestionar
+                            </button>
+                        </td>
                     </tr>
 
-                    <!-- Fila 3: Media -->
-                    <tr class="hover:bg-slate-50 transition border-l-4 border-l-transparent">
+                    <!-- Fila 3: Media (Valeria) -->
+                    <tr class="tarea-fila hover:bg-slate-50 transition border-l-4 border-l-transparent" data-status="progreso" data-owner="Valeria">
                         <td class="p-4">
                             <span class="block font-medium text-slate-800">Proyectos</span>
                             <span class="text-xs text-slate-500">Nueva web</span>
                         </td>
                         <td class="p-4 text-slate-700">Plan tracking nueva web</td>
                         <td class="p-4">
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 cursor-pointer hover:text-corp-accent" onclick="filtrarTabla('Valeria')">
                                 <div class="w-6 h-6 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center text-xs font-bold">V</div>
                                 <span>Valeria</span>
                             </div>
                         </td>
-                        <td class="p-4 text-slate-500">22/07</td>
-                        <td class="p-4"><span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-semibold">Media</span></td>
+                         <td class="p-4">
+                            <span class="text-slate-500 block text-xs mb-1">22/07</span>
+                            <span class="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-semibold">Media</span>
+                        </td>
                         <td class="p-4"><span class="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium flex items-center gap-1 w-max"><i class="ph ph-spinner-gap"></i> En progreso</span></td>
+                        <td class="p-4 text-center">
+                            <button onclick="abrirPanelGestion('Nueva web', 'Plan tracking nueva web', 'Valeria', 'Media', 'En progreso')" class="px-3 py-1.5 bg-white border border-slate-200 text-corp-primary rounded hover:bg-slate-50 transition shadow-sm font-medium text-xs flex items-center gap-1 mx-auto">
+                                <i class="ph ph-pencil-simple"></i> Gestionar
+                            </button>
+                        </td>
                     </tr>
 
-                     <!-- Fila 4: Hecho -->
-                     <tr class="hover:bg-slate-50 transition border-l-4 border-l-transparent opacity-75">
+                     <!-- Fila 4: Hecho (Anto) -->
+                     <tr class="tarea-fila hover:bg-slate-50 transition border-l-4 border-l-transparent opacity-75" data-status="hecho" data-owner="Anto">
                         <td class="p-4">
                             <span class="block font-medium text-slate-800 line-through">Proyectos</span>
-                            <span class="text-xs text-slate-500">Nueva web</span>
+                            <span class="text-xs text-slate-500">CMS</span>
                         </td>
-                        <td class="p-4 text-slate-500 line-through">FHU Nueva web</td>
+                        <td class="p-4 text-slate-500 line-through">Cierre de FHU</td>
                         <td class="p-4">
-                            <div class="flex items-center gap-2">
-                                <div class="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">P</div>
-                                <span class="text-slate-500">Paola</span>
+                            <div class="flex items-center gap-2 cursor-pointer hover:text-corp-accent" onclick="filtrarTabla('Anto')">
+                                <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">A</div>
+                                <span class="text-slate-500">Anto</span>
                             </div>
                         </td>
-                        <td class="p-4 text-slate-400">21/07</td>
-                        <td class="p-4"><span class="px-2 py-1 bg-slate-100 text-slate-500 rounded text-xs font-semibold">Alta</span></td>
+                        <td class="p-4">
+                            <span class="text-slate-400 block text-xs mb-1">21/07</span>
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-xs font-semibold">Media</span>
+                        </td>
                         <td class="p-4"><span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-medium flex items-center gap-1 w-max"><i class="ph ph-check"></i> Hecho</span></td>
+                        <td class="p-4 text-center">
+                            <button onclick="abrirPanelGestion('CMS', 'Cierre de FHU', 'Anto', 'Media', 'Hecho')" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-400 rounded hover:bg-slate-50 transition shadow-sm font-medium text-xs flex items-center gap-1 mx-auto">
+                                <i class="ph ph-eye"></i> Ver
+                            </button>
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-        <div class="p-4 border-t border-slate-100 text-center">
-            <button class="text-sm font-medium text-corp-accent hover:text-blue-700 transition">Ver las 47 tareas completas <i class="ph ph-arrow-right"></i></button>
-        </div>
     </div>
 
     <script>
-        // Configuración Global de Chart.js para que coincida con el diseño
+        // Configuración Global de Chart.js
         Chart.defaults.font.family = "'Inter', sans-serif";
         Chart.defaults.color = '#64748B';
 
         // 1. Gráfico de Carga de Trabajo (Stacked Bar Chart)
-        // Este gráfico es clave para la GESTIÓN: Muestra no solo cantidad, sino "calidad" de la carga (Prioridades).
         const ctxWorkload = document.getElementById('workloadChart').getContext('2d');
         new Chart(ctxWorkload, {
             type: 'bar',
@@ -286,20 +351,20 @@
                 datasets: [
                     {
                         label: 'Prioridad Alta',
-                        data: [4, 2, 3, 4], // Datos simulados basados en tu tabla
-                        backgroundColor: '#EF4444', // urgent
+                        data: [4, 2, 3, 4],
+                        backgroundColor: '#EF4444',
                         borderRadius: 4,
                     },
                     {
                         label: 'Prioridad Media',
                         data: [2, 4, 2, 1],
-                        backgroundColor: '#F59E0B', // status-progress
+                        backgroundColor: '#F59E0B',
                         borderRadius: 4,
                     },
                     {
                         label: 'Prioridad Baja',
                         data: [1, 1, 4, 1],
-                        backgroundColor: '#E2E8F0', // slate-200
+                        backgroundColor: '#E2E8F0',
                         borderRadius: 4,
                     }
                 ]
@@ -314,12 +379,11 @@
                 scales: {
                     x: { stacked: true, grid: { display: false } },
                     y: { stacked: true, border: { display: false }, grid: { color: '#F1F5F9' }, beginAtZero: true }
-                },
-                interaction: { mode: 'nearest', axis: 'x', intersect: false }
+                }
             }
         });
 
-        // 2. Gráfico de Estado (Doughnut Chart)
+        // 2. Gráfico de Estado
         const ctxStatus = document.getElementById('statusChart').getContext('2d');
         new Chart(ctxStatus, {
             type: 'doughnut',
@@ -327,12 +391,7 @@
                 labels: ['Hecho', 'En Progreso', 'Por Hacer', 'Monitoreo'],
                 datasets: [{
                     data: [18, 15, 8, 6],
-                    backgroundColor: [
-                        '#10B981', // emerald-500
-                        '#F59E0B', // amber-500
-                        '#64748B', // slate-500
-                        '#3B82F6'  // blue-500
-                    ],
+                    backgroundColor: ['#10B981', '#F59E0B', '#64748B', '#3B82F6'],
                     borderWidth: 0,
                     hoverOffset: 5
                 }]
@@ -340,52 +399,70 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '75%', // Anillo delgado y moderno
+                cutout: '75%',
                 plugins: {
                     legend: { position: 'right', labels: { usePointStyle: true, padding: 20 } }
                 }
             }
         });
+    </script>
 
-        // ----------------------------------------------------
-        // NUEVA LÓGICA DE INTERACCIÓN (ARQUIDASH UX/UI)
-        // ----------------------------------------------------
-        
-        // Función de Filtrado de Tabla por Click
+    <script>
+        // Lógica de Filtrado de Tabla
         function filtrarTabla(filtro) {
             const filas = document.querySelectorAll('.tarea-fila');
+            const indicadorFiltro = document.getElementById('filtro-activo');
             
             // Hacer scroll suave hacia la tabla
-            document.getElementById('tabla-operativa').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('tabla-operativa').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            if (filtro === 'all') {
+                indicadorFiltro.classList.add('hidden');
+            } else {
+                indicadorFiltro.classList.remove('hidden');
+                indicadorFiltro.innerText = "Filtrado por: " + filtro.toUpperCase();
+            }
 
             filas.forEach(fila => {
                 if (filtro === 'all') {
                     fila.style.display = '';
-                } else if (filtro === 'urgente' && fila.dataset.status === 'urgente') {
-                    fila.style.display = '';
-                } else if (fila === 'paola' || filtro === 'ruben' || filtro === 'valeria') {
+                } else if (['urgente', 'progreso', 'hecho'].includes(filtro)) {
+                    if (fila.dataset.status === filtro) fila.style.display = '';
+                    else fila.style.display = 'none';
+                } else if (['Paola', 'Ruben', 'Valeria', 'Anto'].includes(filtro)) {
                     if (fila.dataset.owner === filtro) fila.style.display = '';
                     else fila.style.display = 'none';
-                } else {
-                    fila.style.display = 'none';
                 }
             });
         }
 
-        // Lógica del Panel de Gestión (Side Panel)
-        function abrirPanelGestion(proyecto, tarea, responsable, prioridad) {
-            // Poblar datos
+        // Lógica del Panel Lateral (Gestión de Tareas)
+        function abrirPanelGestion(proyecto, tarea, responsable, prioridad, estado) {
+            // Poblar datos en el formulario
             document.getElementById('panel-proyecto').innerText = proyecto;
-            document.getElementById('panel-tarea').innerText = tarea;
+            document.getElementById('panel-tarea').value = tarea;
             document.getElementById('panel-responsable').value = responsable;
             document.getElementById('panel-prioridad').value = prioridad;
+            
+            // Actualizar botones de estado visualmente (Simulación simple)
+            const btnProgreso = document.getElementById('btn-estado-progreso');
+            const btnHecho = document.getElementById('btn-estado-hecho');
+            
+            btnProgreso.className = 'flex-1 py-2 rounded-lg text-xs font-bold transition border ' + 
+                (estado === 'En progreso' ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100');
+            
+            btnHecho.className = 'flex-1 py-2 rounded-lg text-xs font-bold transition border ' + 
+                (estado === 'Hecho' ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100');
 
-            // Mostrar Panel
+            // Mostrar Panel con animación
             const panelBase = document.getElementById('panel-gestion');
             const panelContent = document.getElementById('panel-content');
             
             panelBase.classList.remove('hidden');
             panelBase.classList.add('flex', 'fade-in');
+            
+            // Forzar reflow para que la animación funcione siempre
+            void panelContent.offsetWidth; 
             panelContent.classList.add('slide-in-right');
         }
 
@@ -394,37 +471,52 @@
             panelBase.classList.add('hidden');
             panelBase.classList.remove('flex', 'fade-in');
         }
+        
+        function simularGuardado() {
+            const btn = document.getElementById('btn-guardar');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="ph ph-spinner-gap animate-spin"></i> Guardando...';
+            btn.classList.add('opacity-75');
+            
+            setTimeout(() => {
+                cerrarPanel();
+                btn.innerHTML = originalText;
+                btn.classList.remove('opacity-75');
+                // Aquí iría un toast notification real
+                alert("Cambios guardados con éxito."); 
+            }, 800);
+        }
     </script>
 
-    <!-- HTML DEL PANEL LATERAL DE GESTIÓN (OCULTO POR DEFECTO) -->
+    <!-- PANEL LATERAL DE GESTIÓN (OCULTO POR DEFECTO) -->
     <div id="panel-gestion" class="fixed inset-0 bg-slate-900/40 hidden z-50 justify-end backdrop-blur-sm">
         <div id="panel-content" class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col">
             <!-- Header Panel -->
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                    <i class="ph-fill ph-note-pencil text-corp-accent text-xl"></i> Gestión de Tarea
+                    <i class="ph-fill ph-kanban text-corp-accent text-xl"></i> Detalles de Tarea
                 </h3>
                 <button onclick="cerrarPanel()" class="text-slate-400 hover:text-red-500 transition">
-                    <i class="ph ph-x text-2xl"></i>
+                    <i class="ph ph-x text-xl"></i>
                 </button>
             </div>
             
             <!-- Body Panel (Formulario) -->
             <div class="p-6 flex-1 overflow-y-auto">
                 <div class="mb-6">
-                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Proyecto</p>
-                    <p id="panel-proyecto" class="font-bold text-slate-800 text-lg">Cargando...</p>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Proyecto / Iniciativa</p>
+                    <p id="panel-proyecto" class="font-bold text-slate-800 text-lg border-l-2 border-corp-accent pl-2">Cargando...</p>
                 </div>
                 
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Descripción de la Tarea</label>
-                    <textarea id="panel-tarea" class="w-full border border-slate-200 rounded-lg p-3 text-sm text-slate-700 focus:ring-2 focus:ring-corp-accent focus:border-corp-accent outline-none" rows="3"></textarea>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Acción Específica</label>
+                    <textarea id="panel-tarea" class="w-full border border-slate-200 rounded-lg p-3 text-sm text-slate-700 focus:ring-2 focus:ring-corp-accent focus:border-corp-accent outline-none" rows="2"></textarea>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 mb-6">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Responsable</label>
-                        <select id="panel-responsable" class="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none bg-slate-50">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Asignado a</label>
+                        <select id="panel-responsable" class="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-slate-50 focus:bg-white focus:border-corp-accent">
                             <option value="Paola">Paola</option>
                             <option value="Ruben">Ruben</option>
                             <option value="Valeria">Valeria</option>
@@ -433,8 +525,8 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-2">Prioridad</label>
-                        <select id="panel-prioridad" class="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none bg-slate-50">
-                            <option value="Alta">Alta</option>
+                        <select id="panel-prioridad" class="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-slate-50 focus:bg-white focus:border-corp-accent">
+                            <option value="Alta">Alta (Urgente)</option>
                             <option value="Media">Media</option>
                             <option value="Baja">Baja</option>
                         </select>
@@ -442,24 +534,25 @@
                 </div>
 
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Estado Actual</label>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Cambiar Estado</label>
                     <div class="flex gap-2">
-                        <button class="flex-1 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition">En Progreso</button>
-                        <button class="flex-1 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-100 transition">Hecho</button>
+                        <button id="btn-estado-progreso" class="flex-1 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition">En Progreso</button>
+                        <button id="btn-estado-hecho" class="flex-1 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-lg text-xs font-bold hover:bg-slate-100 transition">Completado</button>
                     </div>
                 </div>
                 
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Notas / Siguientes pasos</label>
-                    <textarea class="w-full border border-slate-200 rounded-lg p-3 text-sm text-slate-700 outline-none" rows="2" placeholder="Agrega un comentario de actualización..."></textarea>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Bitácora / Siguientes pasos</label>
+                    <textarea class="w-full border border-slate-200 rounded-lg p-3 text-sm text-slate-700 focus:ring-2 focus:ring-corp-accent focus:border-corp-accent outline-none bg-slate-50 focus:bg-white" rows="3" placeholder="Ej: Se envió correo a proveedor esperando respuesta..."></textarea>
+                    <p class="text-xs text-slate-400 mt-1">Última actualización: Hoy, 10:30 AM</p>
                 </div>
             </div>
 
             <!-- Footer Panel -->
-            <div class="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-                <button onclick="cerrarPanel()" class="px-4 py-2 text-slate-600 font-medium text-sm hover:bg-slate-200 rounded-lg transition">Cancelar</button>
-                <button onclick="cerrarPanel()" class="px-4 py-2 bg-corp-primary text-white font-medium text-sm hover:bg-slate-700 rounded-lg shadow-md transition flex items-center gap-2">
-                    <i class="ph ph-floppy-disk"></i> Guardar Cambios
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-xl">
+                <button onclick="cerrarPanel()" class="px-4 py-2 text-slate-600 font-medium text-sm hover:bg-slate-200 rounded-lg transition">Descartar</button>
+                <button id="btn-guardar" onclick="simularGuardado()" class="px-5 py-2 bg-corp-primary text-white font-medium text-sm hover:bg-slate-700 rounded-lg shadow-md transition flex items-center gap-2">
+                    <i class="ph ph-floppy-disk"></i> Guardar
                 </button>
             </div>
         </div>
