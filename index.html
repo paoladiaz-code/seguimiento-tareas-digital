@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consola de Operaciones - Área Digital</title>
+    
+    <!-- Tailwind CSS para diseño rápido y profesional -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js para visualización de datos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Phosphor Icons para iconografía limpia y moderna -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'corp-bg': '#F8FAFC',
+                        'corp-card': '#FFFFFF',
+                        'corp-primary': '#1E293B',
+                        'corp-accent': '#3B82F6',
+                        'status-done': '#10B981',
+                        'status-progress': '#F59E0B',
+                        'status-todo': '#64748B',
+                        'urgent': '#EF4444'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body { background-color: theme('colors.corp-bg'); }
+        
+        /* Scrollbar custom para tablas anchas */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+        
+        /* Animación suave para hover de tarjetas */
+        .hover-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .hover-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="text-slate-800 font-sans p-4 md:p-8 antialiased">
+
+    <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-corp-primary flex items-center gap-2">
+                <i class="ph ph-kanban"></i> Centro de Control: Área Digital
+            </h1>
+            <p class="text-sm text-slate-500 mt-1">Vista Táctica y Operativa de Proyectos</p>
+        </div>
+        <div class="flex gap-3">
+            <button class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition shadow-sm flex items-center gap-2">
+                <i class="ph ph-export"></i> Exportar
+            </button>
+            <button class="px-4 py-2 bg-corp-accent text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition shadow-sm flex items-center gap-2">
+                <i class="ph ph-plus-circle"></i> Nueva Tarea
+            </button>
+        </div>
+    </header>
+
+    <!-- ZONA 1: Táctica (Lo urgente y el panorama general) -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <!-- KPI: Urgente -->
+        <div class="bg-white p-5 rounded-xl border border-red-100 shadow-sm hover-card border-l-4 border-l-urgent">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Alertas Rojas</p>
+                    <h3 class="text-3xl font-bold text-urgent">7</h3>
+                    <p class="text-xs text-red-500 mt-2 font-medium flex items-center gap-1">
+                        <i class="ph-fill ph-warning-circle"></i> Requieren atención hoy
+                    </p>
+                </div>
+                <div class="p-2 bg-red-50 rounded-lg text-urgent">
+                    <i class="ph ph-fire text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI: Progreso -->
+        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover-card">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">En Progreso</p>
+                    <h3 class="text-3xl font-bold text-slate-800">12</h3>
+                    <p class="text-xs text-slate-500 mt-2 font-medium flex items-center gap-1">
+                        <i class="ph ph-trend-up text-corp-accent"></i> 3 nuevas esta semana
+                    </p>
+                </div>
+                <div class="p-2 bg-amber-50 rounded-lg text-status-progress">
+                    <i class="ph ph-spinner-gap text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI: Hecho -->
+        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover-card">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Completadas</p>
+                    <h3 class="text-3xl font-bold text-slate-800">28</h3>
+                    <p class="text-xs text-status-done mt-2 font-medium flex items-center gap-1">
+                        <i class="ph ph-check-circle"></i> +15% vs mes anterior
+                    </p>
+                </div>
+                <div class="p-2 bg-emerald-50 rounded-lg text-status-done">
+                    <i class="ph ph-check text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- KPI: Carga Total -->
+        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover-card">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Total Activas</p>
+                    <h3 class="text-3xl font-bold text-slate-800">47</h3>
+                    <p class="text-xs text-slate-500 mt-2 font-medium">
+                        Repartidas en 5 categorías
+                    </p>
+                </div>
+                <div class="p-2 bg-slate-100 rounded-lg text-slate-600">
+                    <i class="ph ph-list-dashes text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ZONA 2: Gestión (Análisis de carga y estado) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        
+        <!-- Gráfico de Carga de Trabajo Real (Barras Apiladas) -->
+        <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-slate-800">Análisis de Carga por Responsable</h2>
+                <button class="text-slate-400 hover:text-corp-accent"><i class="ph ph-dots-three-outline-vertical"></i></button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Distribución de tareas pendientes según su prioridad, permitiendo identificar cuellos de botella.</p>
+            <div class="relative h-64 w-full">
+                <canvas id="workloadChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico de Estado de Proyectos (Anillo) -->
+        <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-slate-800">Estado General del Portafolio</h2>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Visión global de todas las iniciativas digitales.</p>
+            <div class="relative h-64 w-full flex justify-center">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ZONA 3: Operativa (La tabla de acción) -->
+    <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <h2 class="text-lg font-bold text-slate-800">Registro Operativo de Tareas</h2>
+            
+            <!-- Simulador de Filtros -->
+            <div class="flex flex-wrap gap-2">
+                <span class="text-xs font-semibold text-slate-500 py-2">Filtros Rápidos:</span>
+                <button class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-xs font-medium transition">Mis Tareas (Paola)</button>
+                <button class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-urgent border border-red-100 rounded-full text-xs font-medium transition">Solo Urgentes</button>
+                <button class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-status-progress border border-amber-100 rounded-full text-xs font-medium transition">En Progreso</button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left whitespace-nowrap">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                        <th class="p-4 font-semibold">Categoría / Proyecto</th>
+                        <th class="p-4 font-semibold">Acción Específica</th>
+                        <th class="p-4 font-semibold">Responsable</th>
+                        <th class="p-4 font-semibold">Fecha</th>
+                        <th class="p-4 font-semibold">Prioridad</th>
+                        <th class="p-4 font-semibold">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm divide-y divide-slate-100">
+                    <!-- Fila 1: Urgente -->
+                    <tr class="hover:bg-slate-50 transition border-l-4 border-l-urgent bg-red-50/30">
+                        <td class="p-4">
+                            <span class="block font-medium text-slate-800">General</span>
+                            <span class="text-xs text-slate-500">Proyecto rentabilidad IA</span>
+                        </td>
+                        <td class="p-4 text-slate-700">Completar info de negocio</td>
+                        <td class="p-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">P</div>
+                                <span>Paola</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-urgent font-medium"><i class="ph ph-warning"></i> 21/07 (Vencido)</td>
+                        <td class="p-4"><span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">Alta</span></td>
+                        <td class="p-4"><span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">Monitoreo</span></td>
+                    </tr>
+                    
+                    <!-- Fila 2: En Progreso -->
+                    <tr class="hover:bg-slate-50 transition border-l-4 border-l-transparent">
+                        <td class="p-4">
+                            <span class="block font-medium text-slate-800">Proyectos</span>
+                            <span class="text-xs text-slate-500">Whatsapp (Migración)</span>
+                        </td>
+                        <td class="p-4 text-slate-700">Proyecto Migración: FHU</td>
+                        <td class="p-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">R</div>
+                                <span>Ruben</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-slate-500">27/07</td>
+                        <td class="p-4"><span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold">Alta</span></td>
+                        <td class="p-4"><span class="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium flex items-center gap-1 w-max"><i class="ph ph-spinner-gap"></i> En progreso</span></td>
+                    </tr>
+
+                    <!-- Fila 3: Media -->
+                    <tr class="hover:bg-slate-50 transition border-l-4 border-l-transparent">
+                        <td class="p-4">
+                            <span class="block font-medium text-slate-800">Proyectos</span>
+                            <span class="text-xs text-slate-500">Nueva web</span>
+                        </td>
+                        <td class="p-4 text-slate-700">Plan tracking nueva web</td>
+                        <td class="p-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center text-xs font-bold">V</div>
+                                <span>Valeria</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-slate-500">22/07</td>
+                        <td class="p-4"><span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-semibold">Media</span></td>
+                        <td class="p-4"><span class="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium flex items-center gap-1 w-max"><i class="ph ph-spinner-gap"></i> En progreso</span></td>
+                    </tr>
+
+                     <!-- Fila 4: Hecho -->
+                     <tr class="hover:bg-slate-50 transition border-l-4 border-l-transparent opacity-75">
+                        <td class="p-4">
+                            <span class="block font-medium text-slate-800 line-through">Proyectos</span>
+                            <span class="text-xs text-slate-500">Nueva web</span>
+                        </td>
+                        <td class="p-4 text-slate-500 line-through">FHU Nueva web</td>
+                        <td class="p-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">P</div>
+                                <span class="text-slate-500">Paola</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-slate-400">21/07</td>
+                        <td class="p-4"><span class="px-2 py-1 bg-slate-100 text-slate-500 rounded text-xs font-semibold">Alta</span></td>
+                        <td class="p-4"><span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-medium flex items-center gap-1 w-max"><i class="ph ph-check"></i> Hecho</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="p-4 border-t border-slate-100 text-center">
+            <button class="text-sm font-medium text-corp-accent hover:text-blue-700 transition">Ver las 47 tareas completas <i class="ph ph-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <script>
+        // Configuración Global de Chart.js para que coincida con el diseño
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#64748B';
+
+        // 1. Gráfico de Carga de Trabajo (Stacked Bar Chart)
+        // Este gráfico es clave para la GESTIÓN: Muestra no solo cantidad, sino "calidad" de la carga (Prioridades).
+        const ctxWorkload = document.getElementById('workloadChart').getContext('2d');
+        new Chart(ctxWorkload, {
+            type: 'bar',
+            data: {
+                labels: ['Paola', 'Valeria', 'Anto', 'Ruben'],
+                datasets: [
+                    {
+                        label: 'Prioridad Alta',
+                        data: [4, 2, 3, 4], // Datos simulados basados en tu tabla
+                        backgroundColor: '#EF4444', // urgent
+                        borderRadius: 4,
+                    },
+                    {
+                        label: 'Prioridad Media',
+                        data: [2, 4, 2, 1],
+                        backgroundColor: '#F59E0B', // status-progress
+                        borderRadius: 4,
+                    },
+                    {
+                        label: 'Prioridad Baja',
+                        data: [1, 1, 4, 1],
+                        backgroundColor: '#E2E8F0', // slate-200
+                        borderRadius: 4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    x: { stacked: true, grid: { display: false } },
+                    y: { stacked: true, border: { display: false }, grid: { color: '#F1F5F9' }, beginAtZero: true }
+                },
+                interaction: { mode: 'nearest', axis: 'x', intersect: false }
+            }
+        });
+
+        // 2. Gráfico de Estado (Doughnut Chart)
+        const ctxStatus = document.getElementById('statusChart').getContext('2d');
+        new Chart(ctxStatus, {
+            type: 'doughnut',
+            data: {
+                labels: ['Hecho', 'En Progreso', 'Por Hacer', 'Monitoreo'],
+                datasets: [{
+                    data: [18, 15, 8, 6],
+                    backgroundColor: [
+                        '#10B981', // emerald-500
+                        '#F59E0B', // amber-500
+                        '#64748B', // slate-500
+                        '#3B82F6'  // blue-500
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%', // Anillo delgado y moderno
+                plugins: {
+                    legend: { position: 'right', labels: { usePointStyle: true, padding: 20 } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
