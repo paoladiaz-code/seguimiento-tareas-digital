@@ -40,6 +40,11 @@
         .transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .row-hover:hover { background-color: #F1F5F9; }
         
+        /* Indicadores visuales de interactividad */
+        .clickable-kpi { cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s, transform 0.2s; }
+        .clickable-kpi:hover { border-color: #CBD5E1; transform: translateY(-2px); }
+        .clickable-kpi.active-filter { border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        
         /* Panel Lateral (Offcanvas) */
         #panel-gestion {
             position: fixed; top: 0; right: -450px; width: 400px; height: 100vh;
@@ -57,6 +62,25 @@
         /* Latido Alerta */
         @keyframes ping-slow { 75%, 100% { transform: scale(2); opacity: 0; } }
         .animate-ping-slow { animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+        /* Estilos para selects de filtro en tabla */
+        .filter-select {
+            appearance: none;
+            background-color: transparent;
+            border: 1px solid #E2E8F0;
+            border-radius: 0.375rem;
+            padding: 0.1rem 1.5rem 0.1rem 0.5rem;
+            font-size: 0.7rem;
+            color: #64748B;
+            font-weight: normal;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.2rem center;
+            background-repeat: no-repeat;
+            background-size: 1em 1em;
+            margin-top: 4px;
+        }
+        .filter-select:focus { outline: none; border-color: #3B82F6; }
     </style>
 </head>
 <body class="bg-corp-bg text-corp-primary font-sans antialiased">
@@ -82,45 +106,44 @@
 
         <!-- ZONA 1: Táctica (KPIs) -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <!-- KPI 1 -->
-            <div class="bg-corp-card rounded-2xl p-6 shadow-sm border border-slate-100 hover-card transition-all flex flex-col">
+            <!-- KPI 1 (Todos) -->
+            <div onclick="aplicarFiltroKPI('todos', this)" class="clickable-kpi bg-corp-card rounded-2xl p-6 shadow-sm flex flex-col active-filter">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-sm font-medium text-slate-500">Total Tareas Activas</span>
                     <div class="p-2 bg-blue-50 rounded-lg text-corp-accent"><i class="ph ph-stack text-xl"></i></div>
                 </div>
                 <div class="text-3xl font-bold text-slate-900 mb-1">42</div>
-                <span class="text-xs font-semibold text-status-done bg-emerald-50 px-2 py-1 rounded-md inline-block w-max">
-                    <i class="ph ph-trend-up"></i> +4 esta semana
-                </span>
+                <span class="text-xs text-slate-400 mt-2">Clic para ver todas</span>
             </div>
 
-            <!-- KPI 2 -->
-            <div class="bg-corp-card rounded-2xl p-6 shadow-sm border border-slate-100 hover-card transition-all flex flex-col">
+            <!-- KPI 2 (Hechas) -->
+            <div onclick="aplicarFiltroKPI('hecho', this)" class="clickable-kpi bg-corp-card rounded-2xl p-6 shadow-sm flex flex-col">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-sm font-medium text-slate-500">Hechas (Cierre Semanal)</span>
                     <div class="p-2 bg-emerald-50 rounded-lg text-status-done"><i class="ph ph-check-circle text-xl"></i></div>
                 </div>
                 <div class="text-3xl font-bold text-slate-900 mb-1">18</div>
-                <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2"><div class="bg-status-done h-1.5 rounded-full" style="width: 45%"></div></div>
+                 <span class="text-xs text-slate-400 mt-2">Clic para filtrar</span>
             </div>
 
-            <!-- KPI 3 (Clicable) -->
-            <div id="btn-filtro-urgente" onclick="filtrarTabla('urgente')" class="bg-corp-card rounded-2xl p-6 shadow-sm border border-red-100 hover-card transition-all flex flex-col cursor-pointer ring-2 ring-transparent hover:ring-red-200">
+            <!-- KPI 3 (Alertas) -->
+            <div onclick="aplicarFiltroKPI('urgente', this)" class="clickable-kpi bg-corp-card rounded-2xl p-6 shadow-sm flex flex-col border border-red-50 hover:border-red-200">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-sm font-medium text-red-600">Alertas Rojas (Atrasos)</span>
                     <div class="p-2 bg-red-50 rounded-lg text-urgent"><i class="ph ph-warning-circle text-xl"></i></div>
                 </div>
                 <div class="text-3xl font-bold text-slate-900 mb-1">3</div>
-                <span class="text-xs text-slate-500 mt-2">Clic para ver en tabla</span>
+                <span class="text-xs text-slate-400 mt-2">Clic para filtrar</span>
             </div>
 
-            <!-- KPI 4 -->
-            <div class="bg-corp-card rounded-2xl p-6 shadow-sm border border-slate-100 hover-card transition-all flex flex-col">
+            <!-- KPI 4 (En Progreso) -->
+            <div onclick="aplicarFiltroKPI('progreso', this)" class="clickable-kpi bg-corp-card rounded-2xl p-6 shadow-sm flex flex-col">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-sm font-medium text-slate-500">En Progreso</span>
                     <div class="p-2 bg-amber-50 rounded-lg text-status-progress"><i class="ph ph-spinner-gap text-xl"></i></div>
                 </div>
                 <div class="text-3xl font-bold text-slate-900">15</div>
+                 <span class="text-xs text-slate-400 mt-2">Clic para filtrar</span>
             </div>
         </div>
 
@@ -132,14 +155,12 @@
             
             <!-- Avatares y Alertas -->
             <div class="flex gap-6 mb-6">
-                <!-- Perfil 1 -->
                 <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="filtrarTablaOwner('Valeria')">
                     <div class="relative">
                         <div class="w-12 h-12 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm group-hover:scale-110 transition-transform">V</div>
                     </div>
                     <span class="text-xs font-semibold text-slate-600">Valeria</span>
                 </div>
-                <!-- Perfil 2 (Alerta) -->
                 <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="filtrarTablaOwner('Paola')">
                     <div class="relative">
                         <div class="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm group-hover:scale-110 transition-transform">P</div>
@@ -150,14 +171,12 @@
                     </div>
                     <span class="text-xs font-semibold text-red-600">Paola (Alerta)</span>
                 </div>
-                <!-- Perfil 3 -->
                 <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="filtrarTablaOwner('Anto')">
                     <div class="relative">
                         <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm group-hover:scale-110 transition-transform">A</div>
                     </div>
                     <span class="text-xs font-semibold text-slate-600">Anto</span>
                 </div>
-                 <!-- Perfil 4 -->
                 <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="filtrarTablaOwner('Ruben')">
                     <div class="relative">
                         <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm group-hover:scale-110 transition-transform">R</div>
@@ -175,22 +194,24 @@
                 </div>
             </div>
 
-            <!-- Gráfico de Carga Apilado -->
+            <!-- Gráfico de Carga Apilado (interactivo) -->
             <div class="w-full h-[200px]">
                 <canvas id="workloadChart"></canvas>
             </div>
+            <p class="text-xs text-slate-400 mt-2 text-center"><i class="ph ph-info"></i> Haz clic en las barras del gráfico para filtrar la tabla inferior por Persona y Prioridad.</p>
         </div>
 
         <!-- ZONA 3: Operativa (Tabla de Trabajo) -->
-        <div class="bg-corp-card rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="bg-corp-card rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="seccion-tabla">
             <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
                 <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
                     <i class="ph ph-list-dashes text-slate-400"></i> Registro Operativo
+                    <span id="indicador-filtro" class="text-xs font-normal text-corp-accent bg-blue-50 px-2 py-1 rounded hidden">Filtrado</span>
                 </h2>
                 <!-- Buscador Simple -->
                 <div class="relative">
                     <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" placeholder="Buscar tarea..." class="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm w-64 focus:outline-none focus:border-corp-accent focus:ring-1 focus:ring-corp-accent">
+                    <input type="text" id="buscador-general" onkeyup="filtrarPorTexto()" placeholder="Buscar tarea..." class="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm w-64 focus:outline-none focus:border-corp-accent focus:ring-1 focus:ring-corp-accent">
                 </div>
             </div>
             
@@ -198,37 +219,65 @@
                 <table class="w-full text-left border-collapse" id="tabla-tareas">
                     <thead>
                         <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold">
-                            <th class="p-4 py-3">Proyecto / Iniciativa</th>
-                            <th class="p-4 py-3">Tarea Específica</th>
-                            <th class="p-4 py-3">Responsable</th>
-                            <th class="p-4 py-3">Estado</th>
-                            <th class="p-4 py-3">Prioridad</th>
+                            <th class="p-4 py-3 w-48">Proyecto</th>
+                            <th class="p-4 py-3 w-64">Tarea Específica</th>
+                            <!-- Columna Responsable con Filtro -->
+                            <th class="p-4 py-3">
+                                Responsable<br>
+                                <select class="filter-select w-full" onchange="aplicarFiltrosColumnas()" id="filtro-col-responsable">
+                                    <option value="todos">Todos</option>
+                                    <option value="Paola">Paola</option>
+                                    <option value="Valeria">Valeria</option>
+                                    <option value="Anto">Anto</option>
+                                    <option value="Ruben">Ruben</option>
+                                </select>
+                            </th>
+                            <!-- Columna Estado con Filtro -->
+                            <th class="p-4 py-3">
+                                Estado<br>
+                                <select class="filter-select w-full" onchange="aplicarFiltrosColumnas()" id="filtro-col-estado">
+                                    <option value="todos">Todos</option>
+                                    <option value="hecho">Hecho</option>
+                                    <option value="progreso">En Progreso</option>
+                                    <option value="monitoreo">Monitoreo</option>
+                                </select>
+                            </th>
+                            <!-- Columna Prioridad con Filtro -->
+                            <th class="p-4 py-3">
+                                Prioridad<br>
+                                <select class="filter-select w-full" onchange="aplicarFiltrosColumnas()" id="filtro-col-prioridad">
+                                    <option value="todos">Todas</option>
+                                    <option value="alta">Alta</option>
+                                    <option value="media">Media</option>
+                                    <option value="baja">Baja</option>
+                                </select>
+                            </th>
+                            <th class="p-4 py-3 w-64">Notas / Siguientes Pasos</th>
                             <th class="p-4 py-3 text-right">Acción</th>
                         </tr>
                     </thead>
                     <tbody class="text-sm divide-y divide-slate-100">
                         <!-- Fila 1 (Urgente) -->
                         <tr class="row-hover transition-colors" data-status="monitoreo" data-priority="alta" data-owner="Paola">
-                            <td class="p-4 font-medium text-slate-900 flex items-center gap-2">
-                                <div class="w-2 h-2 rounded-full bg-indigo-500"></div> Proyecto Rentabilidad IA
-                            </td>
-                            <td class="p-4 text-slate-600">Completar info para entender negocio</td>
+                            <td class="p-4 font-medium text-slate-900 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-indigo-500"></div> Rentabilidad IA</td>
+                            <td class="p-4 text-slate-600 tarea-desc">Completar info para entender negocio</td>
                             <td class="p-4">
                                 <div class="flex items-center gap-2">
                                     <div class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">P</div>
-                                    <span class="text-slate-700">Paola</span>
+                                    <span class="text-slate-700 owner-name">Paola</span>
                                 </div>
                             </td>
                             <td class="p-4">
-                                <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium border border-slate-200 flex w-max items-center gap-1">
+                                <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium border border-slate-200 flex w-max items-center gap-1 status-badge">
                                     <i class="ph ph-eye"></i> Monitoreo
                                 </span>
                             </td>
                             <td class="p-4">
-                                <span class="px-2.5 py-1 bg-red-50 text-red-600 rounded-md text-xs font-bold border border-red-100 flex w-max items-center gap-1">
+                                <span class="px-2.5 py-1 bg-red-50 text-red-600 rounded-md text-xs font-bold border border-red-100 flex w-max items-center gap-1 prio-badge">
                                     <i class="ph ph-warning"></i> Alta
                                 </span>
                             </td>
+                            <td class="p-4 text-xs text-slate-500 italic notas-cell">Pendiente enviar lista de comisiones a proveedores.</td>
                             <td class="p-4 text-right">
                                 <button onclick="abrirPanel(this)" class="text-corp-accent font-medium hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors text-xs">Gestionar</button>
                             </td>
@@ -236,24 +285,23 @@
 
                         <!-- Fila 2 -->
                         <tr class="row-hover transition-colors" data-status="progreso" data-priority="media" data-owner="Valeria">
-                            <td class="p-4 font-medium text-slate-900 flex items-center gap-2">
-                                <div class="w-2 h-2 rounded-full bg-pink-500"></div> Nueva web
-                            </td>
-                            <td class="p-4 text-slate-600">Plan tracking nueva web</td>
+                            <td class="p-4 font-medium text-slate-900 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-pink-500"></div> Nueva web</td>
+                            <td class="p-4 text-slate-600 tarea-desc">Plan tracking nueva web</td>
                             <td class="p-4">
                                 <div class="flex items-center gap-2">
                                     <div class="w-6 h-6 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center text-xs font-bold">V</div>
-                                    <span class="text-slate-700">Valeria</span>
+                                    <span class="text-slate-700 owner-name">Valeria</span>
                                 </div>
                             </td>
                             <td class="p-4">
-                                <span class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-medium border border-amber-200 flex w-max items-center gap-1">
+                                <span class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-medium border border-amber-200 flex w-max items-center gap-1 status-badge">
                                     <i class="ph ph-spinner"></i> En Progreso
                                 </span>
                             </td>
                             <td class="p-4">
-                                <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium border border-slate-200">Media</span>
+                                <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium border border-slate-200 prio-badge">Media</span>
                             </td>
+                            <td class="p-4 text-xs text-slate-500 italic notas-cell">-</td>
                             <td class="p-4 text-right">
                                 <button onclick="abrirPanel(this)" class="text-corp-accent font-medium hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors text-xs">Gestionar</button>
                             </td>
@@ -261,26 +309,51 @@
 
                         <!-- Fila 3 -->
                         <tr class="row-hover transition-colors" data-status="progreso" data-priority="alta" data-owner="Ruben">
-                            <td class="p-4 font-medium text-slate-900 flex items-center gap-2">
-                                <div class="w-2 h-2 rounded-full bg-emerald-500"></div> Whatsapp
-                            </td>
-                            <td class="p-4 text-slate-600">Proyecto Migración: FHU</td>
+                            <td class="p-4 font-medium text-slate-900 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-emerald-500"></div> Whatsapp</td>
+                            <td class="p-4 text-slate-600 tarea-desc">Proyecto Migración: FHU</td>
                             <td class="p-4">
                                 <div class="flex items-center gap-2">
                                     <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">R</div>
-                                    <span class="text-slate-700">Ruben</span>
+                                    <span class="text-slate-700 owner-name">Ruben</span>
                                 </div>
                             </td>
                             <td class="p-4">
-                                <span class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-medium border border-amber-200 flex w-max items-center gap-1">
+                                <span class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-medium border border-amber-200 flex w-max items-center gap-1 status-badge">
                                     <i class="ph ph-spinner"></i> En Progreso
                                 </span>
                             </td>
                             <td class="p-4">
-                                <span class="px-2.5 py-1 bg-red-50 text-red-600 rounded-md text-xs font-bold border border-red-100 flex w-max items-center gap-1">
+                                <span class="px-2.5 py-1 bg-red-50 text-red-600 rounded-md text-xs font-bold border border-red-100 flex w-max items-center gap-1 prio-badge">
                                     <i class="ph ph-warning"></i> Alta
                                 </span>
                             </td>
+                             <td class="p-4 text-xs text-slate-500 italic notas-cell">Esperando OK de arquitectura técnica.</td>
+                            <td class="p-4 text-right">
+                                <button onclick="abrirPanel(this)" class="text-corp-accent font-medium hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors text-xs">Gestionar</button>
+                            </td>
+                        </tr>
+                        
+                        <!-- Fila 4 -->
+                        <tr class="row-hover transition-colors" data-status="hecho" data-priority="alta" data-owner="Paola">
+                            <td class="p-4 font-medium text-slate-900 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-pink-500"></div> Nueva web</td>
+                            <td class="p-4 text-slate-600 tarea-desc">Alcance bot IA (web)</td>
+                            <td class="p-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">P</div>
+                                    <span class="text-slate-700 owner-name">Paola</span>
+                                </div>
+                            </td>
+                            <td class="p-4">
+                                <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium border border-emerald-200 flex w-max items-center gap-1 status-badge">
+                                    <i class="ph ph-check"></i> Hecho
+                                </span>
+                            </td>
+                            <td class="p-4">
+                                <span class="px-2.5 py-1 bg-red-50 text-red-600 rounded-md text-xs font-bold border border-red-100 flex w-max items-center gap-1 prio-badge">
+                                    <i class="ph ph-warning"></i> Alta
+                                </span>
+                            </td>
+                             <td class="p-4 text-xs text-slate-500 italic notas-cell">Realizado, pendiente enviar a proyectos.</td>
                             <td class="p-4 text-right">
                                 <button onclick="abrirPanel(this)" class="text-corp-accent font-medium hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors text-xs">Gestionar</button>
                             </td>
@@ -294,7 +367,6 @@
     <!-- PANEL LATERAL (OFFCANVAS) -->
     <div id="panel-overlay" onclick="cerrarPanel()"></div>
     <div id="panel-gestion">
-        <!-- Header Panel -->
         <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
             <div>
                 <h3 class="font-bold text-slate-900" id="panel-titulo">Gestionar Tarea</h3>
@@ -303,23 +375,16 @@
             <button onclick="cerrarPanel()" class="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition"><i class="ph ph-x text-lg"></i></button>
         </div>
         
-        <!-- Contenido Panel -->
         <div class="p-6 flex-1">
-            <!-- Formulario Simulado -->
             <form id="form-tarea" onsubmit="event.preventDefault(); guardarCambios();">
-                
-                <!-- Input Nombre Proyecto (Visible solo al crear) -->
                 <div class="mb-5" id="input-proyecto-container" style="display: none;">
                     <label class="block text-sm font-medium text-slate-700 mb-2">Nombre del Proyecto</label>
                     <input type="text" id="input-proyecto" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-corp-accent focus:outline-none">
                 </div>
-
-                <!-- Input Nombre Tarea (Visible solo al crear) -->
                 <div class="mb-5" id="input-tarea-container" style="display: none;">
                     <label class="block text-sm font-medium text-slate-700 mb-2">Descripción de la Tarea</label>
                     <input type="text" id="input-tarea" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-corp-accent focus:outline-none">
                 </div>
-
                 <div class="mb-5">
                     <label class="block text-sm font-medium text-slate-700 mb-2">Responsable</label>
                     <select id="select-owner" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-corp-accent focus:outline-none">
@@ -329,7 +394,6 @@
                         <option value="Ruben">Ruben</option>
                     </select>
                 </div>
-
                 <div class="mb-5">
                     <label class="block text-sm font-medium text-slate-700 mb-2">Prioridad</label>
                     <select id="select-priority" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-corp-accent focus:outline-none">
@@ -338,24 +402,21 @@
                         <option value="baja">Baja</option>
                     </select>
                 </div>
-                
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-slate-700 mb-2">Cambiar Estado</label>
                     <div class="flex gap-2">
-                        <!-- Se cambiaron a type="button" para evitar recargas del form -->
+                        <!-- Usamos type button y llamamos la lógica directamente -->
                         <button type="button" id="btn-estado-progreso" onclick="actualizarBotonesEstado('En progreso')" class="flex-1 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition">En Progreso</button>
                         <button type="button" id="btn-estado-hecho" onclick="actualizarBotonesEstado('Hecho')" class="flex-1 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-lg text-xs font-bold hover:bg-slate-100 transition">Completado</button>
                     </div>
                 </div>
-                
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Bitácora / Siguientes Pasos</label>
-                    <textarea class="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:border-corp-accent h-24 resize-none" placeholder="Añadir notas..."></textarea>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Notas / Siguientes Pasos</label>
+                    <textarea id="input-notas" class="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:border-corp-accent h-24 resize-none" placeholder="Añadir notas o bitácora..."></textarea>
                 </div>
             </form>
         </div>
 
-        <!-- Footer Panel -->
         <div class="p-5 border-t border-slate-100 bg-slate-50 sticky bottom-0">
             <button type="button" onclick="guardarCambios()" class="w-full bg-corp-primary hover:bg-slate-800 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm">
                 Guardar Cambios
@@ -368,207 +429,18 @@
            1. Inicialización de Gráficos (Chart.js)
            ============================================================== */
         const ctxWorkload = document.getElementById('workloadChart').getContext('2d');
-        new Chart(ctxWorkload, {
+        const labelsNombres = ['Paola', 'Valeria', 'Anto', 'Ruben'];
+        
+        const workloadChart = new Chart(ctxWorkload, {
             type: 'bar',
             data: {
-                labels: ['Paola', 'Valeria', 'Anto', 'Ruben'],
+                labels: labelsNombres,
                 datasets: [
-                    { label: 'Prioridad Alta', data: [5, 1, 2, 3], backgroundColor: '#EF4444', borderRadius: 4 },
-                    { label: 'Prioridad Media', data: [3, 4, 3, 2], backgroundColor: '#F59E0B', borderRadius: 4 },
-                    { label: 'Prioridad Baja', data: [2, 3, 4, 1], backgroundColor: '#64748B', borderRadius: 4 }
+                    // Orden de índices: 0 = Alta, 1 = Media, 2 = Baja
+                    { label: 'alta', data: [5, 1, 2, 3], backgroundColor: '#EF4444', borderRadius: 4 },
+                    { label: 'media', data: [3, 4, 3, 2], backgroundColor: '#F59E0B', borderRadius: 4 },
+                    { label: 'baja', data: [2, 3, 4, 1], backgroundColor: '#64748B', borderRadius: 4 }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
-                scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, border: { display: false } } }
-            }
-        });
-
-        /* ==============================================================
-           2. Lógica de UI (Filtros de Tabla)
-           ============================================================== */
-        function filtrarTabla(tipo) {
-            const filas = document.querySelectorAll('#tabla-tareas tbody tr');
-            filas.forEach(fila => {
-                if (tipo === 'urgente') {
-                    const status = fila.getAttribute('data-status');
-                    const priority = fila.getAttribute('data-priority');
-                    fila.style.display = (priority === 'alta' && status !== 'hecho') ? '' : 'none';
-                }
-            });
-            document.getElementById('tabla-tareas').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        function filtrarTablaOwner(ownerName) {
-            const filas = document.querySelectorAll('#tabla-tareas tbody tr');
-            filas.forEach(fila => {
-                const owner = fila.getAttribute('data-owner');
-                fila.style.display = (owner === ownerName) ? '' : 'none';
-            });
-            document.getElementById('tabla-tareas').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        function limpiarFiltros() {
-            document.querySelectorAll('#tabla-tareas tbody tr').forEach(fila => fila.style.display = '');
-        }
-
-        /* ==============================================================
-           3. Lógica de UI (Panel Lateral y Gestión)
-           ============================================================== */
-        let filaActualEnEdicion = null; // Variable global para saber qué editamos
-        let modoCreacion = false; // Bandera
-        let estadoSeleccionadoTemporal = ''; 
-
-        function actualizarBotonesEstado(estado) {
-            estadoSeleccionadoTemporal = estado;
-            const btnProgreso = document.getElementById('btn-estado-progreso');
-            const btnHecho = document.getElementById('btn-estado-hecho');
-            
-            btnProgreso.className = 'flex-1 py-2 rounded-lg text-xs font-bold transition border ' + 
-                (estado === 'En progreso' ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100');
-            
-            btnHecho.className = 'flex-1 py-2 rounded-lg text-xs font-bold transition border ' + 
-                (estado === 'Hecho' ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100');
-        }
-
-        // Abre el panel para CREAR nueva tarea
-        function abrirPanelNuevaTarea() {
-            modoCreacion = true;
-            filaActualEnEdicion = null;
-            document.getElementById('panel-titulo').innerText = "Crear Nueva Tarea";
-            document.getElementById('panel-proyecto-nombre').style.display = 'none'; // Ocultamos el subtitulo
-            
-            // Mostrar inputs de texto
-            document.getElementById('input-proyecto-container').style.display = 'block';
-            document.getElementById('input-tarea-container').style.display = 'block';
-            
-            // Limpiar valores
-            document.getElementById('input-proyecto').value = '';
-            document.getElementById('input-tarea').value = '';
-            document.getElementById('select-owner').value = 'Paola';
-            document.getElementById('select-priority').value = 'media';
-            actualizarBotonesEstado('Por hacer'); 
-            
-            mostrarPanel();
-        }
-
-        // Abre el panel para EDITAR tarea existente
-        function abrirPanel(btnElement) {
-            modoCreacion = false;
-            filaActualEnEdicion = btnElement.closest('tr');
-            
-            // Configurar UI del panel
-            document.getElementById('panel-titulo').innerText = "Gestionar Tarea";
-            document.getElementById('panel-proyecto-nombre').style.display = 'block';
-            document.getElementById('input-proyecto-container').style.display = 'none';
-            document.getElementById('input-tarea-container').style.display = 'none';
-            
-            // Extraer datos de la fila HTML
-            const proyecto = filaActualEnEdicion.cells[0].innerText.trim();
-            const owner = filaActualEnEdicion.getAttribute('data-owner');
-            const priority = filaActualEnEdicion.getAttribute('data-priority');
-            const status = filaActualEnEdicion.getAttribute('data-status');
-
-            document.getElementById('panel-proyecto-nombre').innerText = proyecto;
-            document.getElementById('select-owner').value = owner;
-            document.getElementById('select-priority').value = priority;
-            
-            const estadoFormateado = status === 'progreso' ? 'En progreso' : (status === 'hecho' ? 'Hecho' : 'Monitoreo');
-            actualizarBotonesEstado(estadoFormateado);
-
-            mostrarPanel();
-        }
-
-        function mostrarPanel() {
-            document.getElementById('panel-gestion').classList.add('open');
-            document.getElementById('panel-overlay').classList.add('open');
-        }
-
-        function cerrarPanel() {
-            document.getElementById('panel-gestion').classList.remove('open');
-            document.getElementById('panel-overlay').classList.remove('open');
-            filaActualEnEdicion = null;
-        }
-
-        /* ==============================================================
-           4. Lógica de UI (Guardar y Actualizar Tabla)
-           ============================================================== */
-        function guardarCambios() {
-            const owner = document.getElementById('select-owner').value;
-            const priority = document.getElementById('select-priority').value;
-            const statusData = estadoSeleccionadoTemporal === 'Hecho' ? 'hecho' : (estadoSeleccionadoTemporal === 'En progreso' ? 'progreso' : 'monitoreo');
-
-            if (modoCreacion) {
-                // LÓGICA PARA CREAR
-                const proyectoTxt = document.getElementById('input-proyecto').value || 'Nuevo Proyecto';
-                const tareaTxt = document.getElementById('input-tarea').value || 'Sin descripción';
-                
-                const tbody = document.querySelector('#tabla-tareas tbody');
-                const nuevaFila = document.createElement('tr');
-                nuevaFila.className = "row-hover transition-colors";
-                nuevaFila.setAttribute('data-status', statusData);
-                nuevaFila.setAttribute('data-priority', priority);
-                nuevaFila.setAttribute('data-owner', owner);
-
-                // HTML de la nueva fila
-                nuevaFila.innerHTML = `
-                    <td class="p-4 font-medium text-slate-900 flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full bg-gray-500"></div> ${proyectoTxt}
-                    </td>
-                    <td class="p-4 text-slate-600">${tareaTxt}</td>
-                    <td class="p-4">
-                        <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold">${owner.charAt(0)}</div>
-                            <span class="text-slate-700">${owner}</span>
-                        </div>
-                    </td>
-                    <td class="p-4">
-                        <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium border border-slate-200 flex w-max items-center gap-1">
-                             ${estadoSeleccionadoTemporal}
-                        </span>
-                    </td>
-                    <td class="p-4">
-                        <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium border border-slate-200 uppercase">${priority}</span>
-                    </td>
-                    <td class="p-4 text-right">
-                        <button onclick="abrirPanel(this)" class="text-corp-accent font-medium hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors text-xs">Gestionar</button>
-                    </td>
-                `;
-                
-                // Insertar al principio
-                tbody.insertBefore(nuevaFila, tbody.firstChild);
-
-            } else if (filaActualEnEdicion) {
-                // LÓGICA PARA EDITAR 
-                filaActualEnEdicion.setAttribute('data-owner', owner);
-                filaActualEnEdicion.setAttribute('data-priority', priority);
-                filaActualEnEdicion.setAttribute('data-status', statusData);
-
-                // Actualizar celda de Responsable
-                filaActualEnEdicion.cells[2].innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <div class="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold">${owner.charAt(0)}</div>
-                        <span class="text-slate-700">${owner}</span>
-                    </div>
-                `;
-
-                // Actualizar celda de Estado
-                let estadoHTML = '';
-                if(statusData === 'hecho') estadoHTML = `<span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium border border-emerald-200 flex w-max items-center gap-1"><i class="ph ph-check"></i> Hecho</span>`;
-                else if(statusData === 'progreso') estadoHTML = `<span class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-medium border border-amber-200 flex w-max items-center gap-1"><i class="ph ph-spinner"></i> En Progreso</span>`;
-                else estadoHTML = `<span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium border border-slate-200 flex w-max items-center gap-1"><i class="ph ph-eye"></i> Monitoreo</span>`;
-                filaActualEnEdicion.cells[3].innerHTML = estadoHTML;
-
-                // Actualizar celda Prioridad
-                let prioHTML = '';
-                if(priority === 'alta') prioHTML = `<span class="px-2.5 py-1 bg-red-50 text-red-600 rounded-md text-xs font-bold border border-red-100 flex w-max items-center gap-1"><i class="ph ph-warning"></i> Alta</span>`;
-                else prioHTML = `<span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium border border-slate-200">Media</span>`;
-                filaActualEnEdicion.cells[4].innerHTML = prioHTML;
-            }
-
-            cerrarPanel();
-        }
-    </script>
-</body>
-</html>
