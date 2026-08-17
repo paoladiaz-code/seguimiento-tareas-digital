@@ -55,24 +55,9 @@
         
         @keyframes ping-slow { 75%, 100% { transform: scale(2); opacity: 0; } }
         .animate-ping-slow { animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
-
-        /* Toast UI */
-        #toast {
-            position: fixed; bottom: -100px; right: 20px;
-            background-color: #1E293B; color: white; padding: 12px 24px;
-            border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 60;
-        }
-        #toast.show { bottom: 20px; }
     </style>
 </head>
 <body class="bg-corp-bg text-corp-primary font-sans antialiased overflow-x-hidden">
-
-    <!-- Toast Notification -->
-    <div id="toast" class="flex items-center gap-2 font-medium text-sm">
-        <i id="toast-icon" class="ph ph-check-circle text-lg"></i>
-        <span id="toast-msg">Actualizado con éxito</span>
-    </div>
 
     <!-- MAIN CONTENT -->
     <div class="max-w-[1400px] mx-auto p-6 lg:p-10">
@@ -140,14 +125,74 @@
             <div class="w-full md:w-1/3 border-r border-slate-100 pr-4">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-md font-bold text-slate-900 flex items-center gap-2">
-                        <i class="ph ph-users-three text-slate-400"></i> Salud del Equipo (Carga de Trabajo)
+                        <i class="ph ph-users-three text-slate-400"></i> Salud del Equipo
                     </h2>
                 </div>
                 
                 <!-- Contenedor dinámico de Avatares -->
                 <div class="flex gap-4 mb-2 flex-wrap" id="avatares-container">
                     <!-- Se llena con JS -->
-        <div id="panel-overlay" onclick="cerrarPanel()"></div>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-4 italic">Haz clic en un avatar para filtrar la tabla.</p>
+            </div>
+
+            <div class="w-full md:w-2/3">
+                <div class="flex justify-end mb-2">
+                    <span class="text-xs text-slate-400 flex items-center gap-1"><i class="ph ph-info"></i> Haz clic en las barras para filtrar</span>
+                </div>
+                <div class="w-full h-[140px]">
+                    <canvas id="workloadChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ZONA 3: Operativa (Tabla de Trabajo) -->
+        <div class="bg-corp-card rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white">
+                
+                <!-- Buscador Simple -->
+                <div class="relative w-full sm:w-auto">
+                    <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="buscador" onkeyup="aplicarFiltrosCombinados()" placeholder="Buscar proyecto o notas..." class="pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm w-full sm:w-72 focus:outline-none focus:border-corp-accent focus:ring-1 focus:ring-corp-accent bg-slate-50">
+                </div>
+
+                <!-- Selectores Rápidos -->
+                <div class="flex gap-3 w-full sm:w-auto">
+                    <select id="filtro-owner" onchange="aplicarFiltrosCombinados()" class="p-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 bg-white focus:outline-none">
+                        <option value="todos">Todos los Responsables</option>
+                    </select>
+                    
+                    <select id="filtro-estado" onchange="aplicarFiltrosCombinados()" class="p-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 bg-white focus:outline-none">
+                        <option value="todos">Todos los Estados</option>
+                        <option value="hecho">Completadas</option>
+                        <option value="progreso">En Progreso</option>
+                        <option value="monitoreo">Monitoreo</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse" id="tabla-tareas">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold border-b border-slate-100">
+                            <th class="p-4 py-3">Iniciativa / Proyecto</th>
+                            <th class="p-4 py-3">Tarea Específica</th>
+                            <th class="p-4 py-3">Responsable</th>
+                            <th class="p-4 py-3">Estado</th>
+                            <th class="p-4 py-3">Prioridad</th>
+                            <th class="p-4 py-3 w-[200px]">Notas Breves</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-slate-100" id="tabla-body">
+                        <!-- Las filas se insertan aquí con JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL LATERAL DE LECTURA (OFFCANVAS) -->
+    <div id="panel-overlay" onclick="cerrarPanel()"></div>
     <div id="panel-gestion">
         <!-- Header Panel -->
         <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
@@ -201,40 +246,57 @@
 
     <script>
         /* ==============================================================
-           CONFIGURACIÓN (PEGA AQUÍ TU LINK CSV)
+           1. CONFIGURACIÓN (Truco de URL de Exportación Directa)
            ============================================================== */
-        // Reemplaza esto con el link que obtuviste en Archivo > Compartir > Publicar en la web (.csv)
-        const URL_CSV_GOOGLE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5K7u46h2Qv-0iR403vDkO0c3Yw_sW4V3R_0-3Yw/pub?output=csv"; 
+        // Usamos el export formato CSV automático de Google Sheets
+        const URL_CSV_GOOGLE = "https://docs.google.com/spreadsheets/d/17dG9ptszDfrQB-3UHxbgt6RJLoWFzp_sMUsZZ2_mu3o/export?format=csv"; 
         
         let dbData = []; 
         let myChart = null; 
 
+        const paletaColores = {
+            'Proyecto Rentabilidad IA': 'bg-purple-500',
+            'Intranet Corporativa': 'bg-pink-500',
+            'Canal Whatsapp': 'bg-blue-500',
+            'Campaña Keno': 'bg-emerald-500',
+            'Pasarela Pagos': 'bg-purple-500',
+            'SEO Apuestas': 'bg-orange-500'
+        };
+
+        const coloresAvatar = {
+            'Paola': { bg: 'bg-purple-100', text: 'text-purple-700' },
+            'Valeria': { bg: 'bg-pink-100', text: 'text-pink-700' },
+            'Ruben': { bg: 'bg-blue-100', text: 'text-blue-700' },
+            'Anto': { bg: 'bg-emerald-100', text: 'text-emerald-700' }
+        };
+
         /* ==============================================================
-           1. Motor de Sincronización UNIDIRECCIONAL (PapaParse CSV)
+           2. MOTOR DE SINCRONIZACIÓN (PapaParse)
            ============================================================== */
         function cargarDatosDesdeCSV() {
-            mostrarToast('loading', 'Leyendo Google Sheets...');
-            
+            document.getElementById('sync-status').innerHTML = '<i class="ph ph-arrows-clockwise animate-spin"></i> Conectando...';
+            document.getElementById('sync-status').className = "text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full ml-2 flex items-center gap-1";
+
             Papa.parse(URL_CSV_GOOGLE, {
                 download: true,
-                header: true, // Usa la primera fila como nombres de columna
+                header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
                     procesarDatosInteligente(results.data);
                 },
                 error: function(error) {
                     console.error("Error leyendo CSV:", error);
-                    document.getElementById('sync-status').innerHTML = '<i class="ph ph-warning-circle text-red-500"></i> Error de conexión';
-                    mostrarToast('error', 'No se pudo leer el archivo. Verifica que esté publicado en la web.');
+                    document.getElementById('sync-status').innerHTML = '<i class="ph ph-warning-circle text-red-500"></i> Error al conectar';
+                    document.getElementById('sync-status').className = "text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded-full ml-2 flex items-center gap-1";
                 }
             });
         }
 
         function procesarDatosInteligente(rawData) {
-            dbData = []; // Limpiar datos actuales
+            dbData = []; 
             
             rawData.forEach((row, index) => {
-                // Buscador inteligente de columnas (no importa en qué orden estén)
+                // Buscador inteligente de nombres de columnas
                 const obtenerValor = (palabrasClave) => {
                     const clave = Object.keys(row).find(k => palabrasClave.some(pc => k.toLowerCase().includes(pc)));
                     return clave ? row[clave] : '';
@@ -247,129 +309,27 @@
                 const prioridad = obtenerValor(['prioridad', 'urgencia']);
                 const notas = obtenerValor(['nota', 'paso', 'bitácora']);
 
-                // Solo guardar si hay algo útil en la fila
                 if(proyecto || tarea) {
-                    dbData.push({
-                        id: index,
-                        proyecto: proyecto,
-                        tarea: tarea,
-                        responsable: responsable,
-                        estado: estado,
-                        prioridad: prioridad,
-                        notas: notas
-                    });
+                    dbData.push({ id: index, proyecto, tarea, responsable, estado, prioridad, notas });
                 }
             });
 
             renderizarTabla();
             actualizarDashboardCompleto();
             
-            document.getElementById('sync-status').innerHTML = '<i class="ph ph-check-circle text-emerald-500"></i> Actualizado';
+            document.getElementById('sync-status').innerHTML = '<i class="ph ph-check-circle text-emerald-500"></i> Sincronizado en vivo';
             document.getElementById('sync-status').className = "text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full ml-2 flex items-center gap-1";
-            mostrarToast('success', 'Datos sincronizados correctamente');
-        }
-
-        // Cargar datos al iniciar y recargar cada minuto automáticamente
-        window.addEventListener('DOMContentLoaded', () => {
-            cargarDatosDesdeCSV();
-            setInterval(cargarDatosDesdeCSV, 60000); 
-        });
-
-        /* ==============================================================
-           2. UI y Renderizado
-           ============================================================== */
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3gfj6h8R0xyY8wKaPiQTvCnfP1A1v90jbl_lcOZf7aYxKRJvwFAO8wLgyCoUe-FuKmg/exec";
-        let dbData = []; 
-
-        /* ==============================================================
-           1. Motor de Sincronización (Fetch)
-           ============================================================== */
-        async function fetchDesdeGoogleSheets() {
-            try {
-                mostrarToast('loading', 'Sincronizando con Google Sheets...');
-                document.getElementById('sync-status').innerHTML = '<i class="ph ph-arrows-clockwise animate-spin"></i> Conectando...';
-                
-                const response = await fetch(GOOGLE_SCRIPT_URL);
-                const data = await response.json();
-                
-                dbData = data; 
-                
-                renderizarTabla();
-                actualizarDashboardCompleto();
-                
-                document.getElementById('sync-status').innerHTML = '<i class="ph ph-check-circle text-emerald-500"></i> Sincronizado';
-                document.getElementById('sync-status').className = "text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full ml-2 flex items-center gap-1";
-                mostrarToast('success', 'Datos actualizados desde la nube');
-                
-            } catch (error) {
-                console.error("Error conectando con Google Sheets:", error);
-                document.getElementById('sync-status').innerHTML = '<i class="ph ph-warning-circle text-red-500"></i> Modo Local (Sin Conexión)';
-                document.getElementById('sync-status').className = "text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded-full ml-2 flex items-center gap-1";
-                mostrarToast('error', 'Error de conexión. Mostrando datos locales.');
-                
-                // Fallback temporal si no hay internet o falla la URL
-                if(dbData.length === 0) {
-                     dbData = [
-                        { id: '1', proyecto: 'Canal Whatsapp', tarea: 'Proyecto Migración', responsable: 'Ruben', estado: 'progreso', prioridad: 'alta', notas: 'Bloqueado por IT' },
-                        { id: '2', proyecto: 'Campaña Keno', tarea: 'Actualizar Banners', responsable: 'Anto', estado: 'hecho', prioridad: 'media', notas: 'Aprobado' }
-                     ];
-                     renderizarTabla();
-                     actualizarDashboardCompleto();
-                }
-            }
-        }
-
-        // Cargar datos al iniciar
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchDesdeGoogleSheets();
-            // Polling: Actualizar cada 30 segundos
-            setInterval(fetchDesdeGoogleSheets, 30000); 
-        });
-
-        /* ==============================================================
-           2. Lógica de UI (Toast Notifications)
-           ============================================================== */
-        function mostrarToast(type, mensaje) {
-            const toast = document.getElementById('toast');
-            const icon = document.getElementById('toast-icon');
-            const msg = document.getElementById('toast-msg');
-            
-            msg.innerText = mensaje;
-            toast.className = 'flex items-center gap-2 font-medium text-sm show';
-            
-            if(type === 'loading') { icon.className = 'ph ph-arrows-clockwise animate-spin text-lg'; toast.style.background = '#1E293B'; }
-            if(type === 'success') { icon.className = 'ph ph-check-circle text-lg'; toast.style.background = '#10B981'; }
-            if(type === 'error') { icon.className = 'ph ph-warning text-lg'; toast.style.background = '#EF4444'; }
-            
-            setTimeout(() => { toast.classList.remove('show'); }, 3000);
         }
 
         /* ==============================================================
-           3. Renderizado del Dashboard (UI)
+           3. UI Y RENDERIZADO
            ============================================================== */
-        const paletaColores = {
-            'Proyecto Rentabilidad IA': 'bg-purple-500',
-            'Intranet Corporativa': 'bg-pink-500',
-            'Canal Whatsapp': 'bg-blue-500',
-            'Campaña Keno': 'bg-emerald-500',
-            'Pasarela Pagos': 'bg-purple-500',
-            'SEO Apuestas': 'bg-orange-500'
-        };
-        const coloresAvatar = {
-            'Paola': { bg: 'bg-purple-100', text: 'text-purple-700' },
-            'Valeria': { bg: 'bg-pink-100', text: 'text-pink-700' },
-            'Ruben': { bg: 'bg-blue-100', text: 'text-blue-700' },
-            'Anto': { bg: 'bg-emerald-100', text: 'text-emerald-700' }
-        };
-
-        let myChart = null; // Variable global para el gráfico
-
         function renderizarTabla() {
             const tbody = document.getElementById('tabla-body');
             tbody.innerHTML = '';
             
             if(dbData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-500 font-medium">Buscando datos... Asegúrate de pegar el link del CSV.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-slate-500 font-medium">Buscando datos o documento vacío...</td></tr>';
                 return;
             }
 
@@ -377,14 +337,10 @@
                 const colorPunto = paletaColores[row.proyecto] || 'bg-slate-400';
                 const avatar = coloresAvatar[row.responsable] || { bg: 'bg-slate-100', text: 'text-slate-700' };
                 
-                // Limpieza de datos
                 const estadoLimpio = row.estado ? row.estado.toString().toLowerCase().trim() : '';
                 const prioLimpia = row.prioridad ? row.prioridad.toString().toLowerCase().trim() : '';
 
-                // Formatear Estado
-                let estadoHTML = '';
-                let estadoDataAtributo = 'monitoreo'; 
-                
+                let estadoHTML = ''; let estadoDataAtributo = 'monitoreo'; 
                 if(estadoLimpio.includes('hecho') || estadoLimpio.includes('completad') || estadoLimpio === 'done') {
                     estadoHTML = `<span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-semibold border border-emerald-200 flex w-max items-center gap-1.5"><i class="ph ph-check"></i> Hecho</span>`;
                     estadoDataAtributo = 'hecho';
@@ -395,10 +351,7 @@
                     estadoHTML = `<span class="px-3 py-1 bg-slate-50 text-slate-600 rounded-md text-xs font-semibold border border-slate-200 flex w-max items-center gap-1.5"><i class="ph ph-eye"></i> Monitoreo</span>`;
                 }
 
-                // Formatear Prioridad
-                let prioHTML = '';
-                let prioDataAtributo = 'baja';
-
+                let prioHTML = ''; let prioDataAtributo = 'baja';
                 if(prioLimpia.includes('alta') || prioLimpia.includes('urgente') || prioLimpia.includes('high')) {
                     prioHTML = `<span class="text-red-600 font-bold text-xs uppercase flex items-center gap-1"><i class="ph ph-warning-circle"></i> Alta</span>`;
                     prioDataAtributo = 'alta';
@@ -417,7 +370,6 @@
                 tr.setAttribute('data-status', estadoDataAtributo);
                 tr.setAttribute('data-priority', prioDataAtributo);
                 
-                // Hacer la fila entera clickeable para LEER detalles
                 tr.onclick = function() { abrirPanelLectura(row, estadoHTML, prioHTML, avatar); };
                 
                 tr.innerHTML = `
@@ -427,35 +379,42 @@
                     <td class="p-4 text-slate-600">${row.tarea || '-'}</td>
                     <td class="p-4">
                         <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 rounded-full ${avatar.bg} ${avatar.text} flex items-center justify-center text-xs font-bold">${(row.responsable || '?').charAt(0)}</div>
+                            <div class="w-6 h-6 rounded-full ${avatar.bg} ${avatar.text} flex items-center justify-center text-xs font-bold">${(row.responsable || '?').charAt(0).toUpperCase()}</div>
                             <span class="text-slate-700 font-medium">${row.responsable || 'Sin Asignar'}</span>
                         </div>
                     </td>
                     <td class="p-4">${estadoHTML}</td>
                     <td class="p-4">${prioHTML}</td>
-                    <td class="p-4 text-slate-500 text-xs italic truncate max-w-[150px] group-hover:text-corp-accent" title="Clic para ver completo">${notasCortas || 'Ver notas...'}</td>
+                    <td class="p-4 text-slate-500 text-xs italic truncate max-w-[200px] group-hover:text-corp-accent" title="Clic para ver completo">${notasCortas || '-'}</td>
                 `;
                 tbody.appendChild(tr);
+            });
+
+            // Llenar selector de responsables
+            const selectOwner = document.getElementById('filtro-owner');
+            const responsables = [...new Set(dbData.map(d => d.responsable))].filter(Boolean);
+            selectOwner.innerHTML = '<option value="todos">Todos los Responsables</option>';
+            responsables.forEach(r => {
+                selectOwner.innerHTML += `<option value="${r}">${r}</option>`;
             });
             
             aplicarFiltrosCombinados();
         }
 
         function actualizarDashboardCompleto() {
-            // KPIs Limpios
-            const total = dbData.length;
+            document.getElementById('kpi-total').innerText = dbData.length;
             
-            const hechas = dbData.filter(d => {
+            document.getElementById('kpi-done').innerText = dbData.filter(d => {
                 const est = d.estado ? d.estado.toString().toLowerCase().trim() : '';
                 return est.includes('hecho') || est.includes('completad') || est === 'done';
             }).length;
 
-            const enProgreso = dbData.filter(d => {
+            document.getElementById('kpi-progress').innerText = dbData.filter(d => {
                 const est = d.estado ? d.estado.toString().toLowerCase().trim() : '';
                 return est.includes('progreso') || est.includes('in progress');
             }).length;
 
-            const urgentes = dbData.filter(d => {
+            document.getElementById('kpi-urgent').innerText = dbData.filter(d => {
                 const prio = d.prioridad ? d.prioridad.toString().toLowerCase().trim() : '';
                 const est = d.estado ? d.estado.toString().toLowerCase().trim() : '';
                 const esAlta = prio.includes('alta') || prio.includes('urgente') || prio.includes('high');
@@ -463,49 +422,30 @@
                 return esAlta && !estaTerminada;
             }).length;
 
-            document.getElementById('kpi-total').innerText = total;
-            document.getElementById('kpi-done').innerText = hechas;
-            document.getElementById('kpi-progress').innerText = enProgreso;
-            document.getElementById('kpi-urgent').innerText = urgentes;
-
-            // Actualizar Avatares
             const contenedorAvatares = document.getElementById('avatares-container');
             contenedorAvatares.innerHTML = '';
             
-            // Obtener responsables únicos
             const responsables = [...new Set(dbData.map(d => d.responsable))].filter(Boolean);
             
             responsables.forEach(nombre => {
-                // Alerta en avatar si tiene Alta + No terminada
                 const tieneUrgente = dbData.some(d => {
                     const esEl = d.responsable === nombre;
                     const prio = d.prioridad ? d.prioridad.toString().toLowerCase().trim() : '';
                     const est = d.estado ? d.estado.toString().toLowerCase().trim() : '';
-                    const esAlta = prio.includes('alta') || prio.includes('urgente') || prio.includes('high');
-                    const estaTerminada = est.includes('hecho') || est.includes('completad') || est === 'done';
+                    const esAlta = prio.includes('alta') || prio.includes('urgente');
+                    const estaTerminada = est.includes('hecho') || est.includes('completad');
                     return esEl && esAlta && !estaTerminada;
                 });
                 
                 const avatar = coloresAvatar[nombre] || { bg: 'bg-slate-100', text: 'text-slate-700' };
-                
-                let htmlAlerta = '';
-                if(tieneUrgente) {
-                    htmlAlerta = `
-                        <span class="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                            <span class="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-white"></span>
-                        </span>
-                    `;
-                }
+                let htmlAlerta = tieneUrgente ? `<span class="absolute -top-1 -right-1 flex h-3.5 w-3.5"><span class="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-white"></span></span>` : '';
 
                 const div = document.createElement('div');
                 div.className = "flex flex-col items-center gap-1.5 cursor-pointer group";
                 div.onclick = () => filtrarTablaRapido(nombre, 'owner');
                 div.innerHTML = `
                     <div class="relative">
-                        <div class="w-11 h-11 rounded-full ${avatar.bg} ${avatar.text} flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm group-hover:scale-110 transition-transform">
-                            ${nombre.charAt(0)}
-                        </div>
+                        <div class="w-11 h-11 rounded-full ${avatar.bg} ${avatar.text} flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm group-hover:scale-110 transition-transform">${nombre.charAt(0).toUpperCase()}</div>
                         ${htmlAlerta}
                     </div>
                     <span class="text-[10px] font-semibold text-slate-600 truncate max-w-[50px]">${nombre}</span>
@@ -517,7 +457,6 @@
         }
 
         function actualizarGrafico(responsables) {
-            // Filtrar y limpiar para Chart.js
             const dataAlta = responsables.map(r => dbData.filter(d => {
                 const prio = d.prioridad ? d.prioridad.toString().toLowerCase().trim() : '';
                 const est = d.estado ? d.estado.toString().toLowerCase().trim() : '';
@@ -531,7 +470,6 @@
             }).length);
 
             const ctx = document.getElementById('workloadChart').getContext('2d');
-            
             if (myChart) { myChart.destroy(); }
             
             myChart = new Chart(ctx, {
@@ -548,10 +486,7 @@
                     onClick: (event, elements) => {
                         if (elements.length > 0) {
                             const index = elements[0].index;
-                            const datasetIndex = elements[0].datasetIndex;
-                            const owner = responsables[index];
-                            const priority = datasetIndex === 0 ? 'alta' : 'media';
-                            document.getElementById('filtro-owner').value = owner;
+                            document.getElementById('filtro-owner').value = responsables[index];
                             document.getElementById('filtro-estado').value = 'todos';
                             aplicarFiltrosCombinados();
                         }
@@ -563,36 +498,31 @@
         }
 
         /* ==============================================================
-           4. Motor de Filtros Cruzados (Buscador + Selects + Clics)
+           4. FILTROS Y BÚSQUEDA
            ============================================================== */
         function aplicarFiltrosCombinados() {
             const buscadorTexto = document.getElementById('buscador').value.toLowerCase();
             const ownerSeleccionado = document.getElementById('filtro-owner').value;
             const estadoSeleccionado = document.getElementById('filtro-estado').value;
 
-            const filas = document.querySelectorAll('#tabla-tareas tbody tr');
-            
-            filas.forEach(fila => {
+            document.querySelectorAll('#tabla-tareas tbody tr').forEach(fila => {
                 const textoFila = fila.innerText.toLowerCase();
                 const ownerFila = fila.getAttribute('data-owner');
                 const estadoFila = fila.getAttribute('data-status');
                 
-                // Usamos atributos extras para filtros que no están en los selects
-                const esOcultadoPorBuscador = !textoFila.includes(buscadorTexto);
-                const esOcultadoPorOwner = ownerSeleccionado !== 'todos' && ownerFila !== ownerSeleccionado;
-                
-                // Tolerancia en filtros de estado (por si el atributo custom trae variaciones)
-                let esOcultadoPorEstado = false;
-                if(estadoSeleccionado !== 'todos') {
-                   if(estadoSeleccionado === 'hecho' && estadoFila !== 'hecho') esOcultadoPorEstado = true;
-                   if(estadoSeleccionado === 'progreso' && estadoFila !== 'progreso') esOcultadoPorEstado = true;
-                   if(estadoSeleccionado === 'monitoreo' && (estadoFila === 'hecho' || estadoFila === 'progreso')) esOcultadoPorEstado = true;
-                }
-                
-                // Validar si tiene filtro de urgencia forzado (desde la tarjeta roja)
                 const forzarUrgente = fila.hasAttribute('data-force-urgent');
 
-                if (esOcultadoPorBuscador || esOcultadoPorOwner || esOcultadoPorEstado || (forzarUrgente && fila.getAttribute('data-priority') !== 'alta')) {
+                let ocultarEstado = false;
+                if(estadoSeleccionado !== 'todos') {
+                   if(estadoSeleccionado === 'hecho' && estadoFila !== 'hecho') ocultarEstado = true;
+                   if(estadoSeleccionado === 'progreso' && estadoFila !== 'progreso') ocultarEstado = true;
+                   if(estadoSeleccionado === 'monitoreo' && (estadoFila === 'hecho' || estadoFila === 'progreso')) ocultarEstado = true;
+                }
+
+                if (!textoFila.includes(buscadorTexto) || 
+                    (ownerSeleccionado !== 'todos' && ownerFila !== ownerSeleccionado) || 
+                    ocultarEstado || 
+                    (forzarUrgente && fila.getAttribute('data-priority') !== 'alta')) {
                     fila.style.display = 'none';
                 } else {
                     fila.style.display = '';
@@ -600,25 +530,17 @@
             });
         }
 
-        // Atajos desde tarjetas (KPIs y Avatares)
         function filtrarTablaRapido(valor, tipo) {
-            limpiarFiltros(); // Reset primero
-            
-            if (tipo === 'status') {
-                document.getElementById('filtro-estado').value = valor;
-            } else if (tipo === 'owner') {
-                document.getElementById('filtro-owner').value = valor;
-            } else if (tipo === 'priority' && valor === 'alta') {
-                // Alerta Alta Prioridad (No tiene select, lo forzamos ocultando las demás)
+            limpiarFiltros(); 
+            if (tipo === 'status') document.getElementById('filtro-estado').value = valor;
+            else if (tipo === 'owner') document.getElementById('filtro-owner').value = valor;
+            else if (tipo === 'priority' && valor === 'alta') {
                 document.querySelectorAll('#tabla-tareas tbody tr').forEach(fila => {
-                    const prio = fila.getAttribute('data-priority');
-                    const est = fila.getAttribute('data-status');
-                    if(prio !== 'alta' || est === 'hecho') fila.style.display = 'none';
+                    if(fila.getAttribute('data-priority') !== 'alta' || fila.getAttribute('data-status') === 'hecho') fila.style.display = 'none';
                 });
                 document.getElementById('tabla-tareas').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                return; // Salir para no sobreescribir con aplicarFiltrosCombinados
+                return; 
             }
-            
             aplicarFiltrosCombinados();
             document.getElementById('tabla-tareas').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -634,88 +556,7 @@
         }
 
         /* ==============================================================
-           5. Lógica de UI (Panel Lateral y Formularios)
-           ============================================================== */
-        let filaActualEnEdicion = null; 
-        let modoCreacion = false; 
-        let estadoSeleccionadoTemporal = ''; 
-
-        function actualizarBotonesEstado(estado) {
-            estadoSeleccionadoTemporal = estado;
-            const btnMoni = document.getElementById('btn-estado-monitoreo');
-            const btnProg = document.getElementById('btn-estado-progreso');
-            const btnHech = document.getElementById('btn-estado-hecho');
-            
-            btnMoni.className = 'flex-1 py-2 rounded-lg text-xs font-bold transition border ' + (estado === 'Monitoreo' ? 'bg-slate-200 border-slate-300 text-slate-800' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100');
-            btnProg.className = 'flex-1 py-2 rounded-lg text-xs font-bold transition border ' + (estado === 'En Progreso' ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-500 hover:bg-amber-50');
-            btnHech.className = 'flex-1 py-2 rounded-lg text-xs font-bold transition border ' + (estado === 'Hecho' ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-500 hover:bg-emerald-50');
-        }
-
-        function abrirPanelNuevaTarea() {
-            modoCreacion = true;
-            filaActualEnEdicion = null;
-            document.getElementById('panel-titulo').innerText = "Crear Nueva Tarea";
-            document.getElementById('panel-proyecto-nombre').style.display = 'none'; 
-            
-            document.getElementById('input-proyecto-container').style.display = 'block';
-            document.getElementById('input-tarea-container').style.display = 'block';
-            
-            document.getElementById('input-proyecto').value = '';
-            document.getElementById('input-tarea').value = '';
-            document.getElementById('select-owner').value = 'Paola';
-            document.getElementById('select-priority').value = 'media';
-            document.getElementById('input-notas').value = '';
-            actualizarBotonesEstado('Monitoreo'); 
-            
-            mostrarPanel();
-        }
-
-        function abrirPanel(trElement) {
-            modoCreacion = false;
-            filaActualEnEdicion = trElement;
-            
-            document.getElementById('panel-titulo').innerText = "Gestionar Tarea";
-            document.getElementById('panel-proyecto-nombre').style.display = 'block';
-            document.getElementById('input-proyecto-container').style.display = 'none';
-            document.getElementById('input-tarea-container').style.display = 'none';
-            
-            const proyecto = trElement.getAttribute('data-proyecto');
-            const tarea = trElement.getAttribute('data-tarea');
-            const owner = trElement.getAttribute('data-owner');
-            const priority = trElement.getAttribute('data-priority');
-            const status = trElement.getAttribute('data-status');
-            const notas = trElement.getAttribute('data-notas');
-
-            document.getElementById('panel-proyecto-nombre').innerHTML = `<b>${proyecto}</b>: ${tarea}`;
-            document.getElementById('select-owner').value = owner || 'Paola';
-            
-            // Mapeo seguro de prioridad al select
-            let prioSelect = 'media';
-            if(priority === 'alta' || priority === 'urgente') prioSelect = 'alta';
-            if(priority === 'baja') prioSelect = 'baja';
-            document.getElementById('select-priority').value = prioSelect;
-            
-            document.getElementById('input-notas').value = notas || '';
-            
-            const estadoFormateado = status === 'progreso' ? 'En Progreso' : (status === 'hecho' ? 'Hecho' : 'Monitoreo');
-            actualizarBotonesEstado(estadoFormateado);
-
-            mostrarPanel();
-        }
-
-        function mostrarPanel() {
-            document.getElementById('panel-gestion').classList.add('open');
-            document.getElementById('panel-overlay').classList.add('open');
-        }
-
-        function cerrarPanel() {
-            document.getElementById('panel-gestion').classList.remove('open');
-            document.getElementById('panel-overlay').classList.remove('open');
-            filaActualEnEdicion = null;
-        }
-
-        /* ==============================================================
-           5. Panel de LECTURA de Tareas
+           5. PANEL LATERAL (MODAL LECTURA)
            ============================================================== */
         function abrirPanelLectura(row, htmlEstado, htmlPrioridad, avatar) {
             document.getElementById('read-proyecto').innerText = row.proyecto || '-';
@@ -723,14 +564,12 @@
             document.getElementById('read-responsable').innerText = row.responsable || 'Sin Asignar';
             document.getElementById('read-notas').innerText = row.notas || 'Sin notas registradas para esta iniciativa.';
             
-            // Inyectar HTML pre-formateado
             document.getElementById('panel-badge-estado').innerHTML = htmlEstado;
             document.getElementById('read-prioridad').innerHTML = htmlPrioridad;
             
-            // Configurar avatar
             const avatarDiv = document.getElementById('read-avatar');
             avatarDiv.className = `w-8 h-8 rounded-full ${avatar.bg} ${avatar.text} flex items-center justify-center text-sm font-bold shadow-sm border border-white`;
-            avatarDiv.innerText = (row.responsable || '?').charAt(0);
+            avatarDiv.innerText = (row.responsable || '?').charAt(0).toUpperCase();
 
             document.getElementById('panel-gestion').classList.add('open');
             document.getElementById('panel-overlay').classList.add('open');
@@ -740,6 +579,9 @@
             document.getElementById('panel-gestion').classList.remove('open');
             document.getElementById('panel-overlay').classList.remove('open');
         }
+
+        // Iniciar carga al abrir
+        window.addEventListener('DOMContentLoaded', cargarDatosDesdeCSV);
     </script>
 </body>
 </html>
