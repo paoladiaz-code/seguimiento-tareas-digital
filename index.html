@@ -5,26 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consola de Operaciones - Área Digital</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'corp-bg': '#F8FAFC',
+                        'tinka-red': '#E3001B',
+                        'tinka-yellow': '#FFC700',
+                        'corp-bg': '#F4F7FE',
                         'corp-card': '#FFFFFF',
-                        'corp-primary': '#1E293B',
-                        'corp-accent': '#3B82F6',
-                        'status-done': '#10B981',
-                        'status-progress': '#F59E0B',
-                        'status-todo': '#64748B',
-                        'urgent': '#EF4444'
                     },
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -35,412 +28,231 @@
     </script>
     
     <style>
-        /* Animaciones para UX */
-        .hover-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
-        .transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .row-hover:hover { background-color: #F1F5F9; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
-        /* Indicadores visuales de interactividad */
-        .clickable-kpi { cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s, transform 0.2s; }
-        .clickable-kpi:hover { border-color: #CBD5E1; transform: translateY(-2px); }
-        .clickable-kpi.active-filter { border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
+        
+        .hover-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        .transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .row-hover:hover { background-color: #F8FAFC; cursor: pointer; }
         
         /* Panel Lateral (Offcanvas) */
         #panel-gestion {
-            position: fixed; top: 0; right: -450px; width: 400px; height: 100vh;
+            position: fixed; top: 0; right: -500px; width: 450px; height: 100vh;
             background-color: white; z-index: 50; box-shadow: -5px 0 25px rgba(0,0,0,0.1);
             transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto; display: flex; flex-direction: column;
         }
         #panel-gestion.open { right: 0; }
+        
         #panel-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: rgba(15, 23, 42, 0.4); z-index: 40; opacity: 0;
-            pointer-events: none; transition: opacity 0.3s ease;
+            background-color: rgba(15, 23, 42, 0.5); z-index: 40; opacity: 0;
+            pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px);
         }
         #panel-overlay.open { opacity: 1; pointer-events: auto; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { height: 6px; width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
         /* Latido Alerta */
         @keyframes ping-slow { 75%, 100% { transform: scale(2); opacity: 0; } }
         .animate-ping-slow { animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
-
-        /* Estilos para selects de filtro en tabla */
-        .filter-select {
-            appearance: none;
-            background-color: transparent;
-            border: 1px solid #E2E8F0;
-            border-radius: 0.375rem;
-            padding: 0.1rem 1.5rem 0.1rem 0.5rem;
-            font-size: 0.7rem;
-            color: #64748B;
-            font-weight: normal;
-            cursor: pointer;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 0.2rem center;
-            background-repeat: no-repeat;
-            background-size: 1em 1em;
-            margin-top: 4px;
-        }
-        .filter-select:focus { outline: none; border-color: #3B82F6; }
+        
+        /* Truncar texto en tabla */
+        .truncate-notas { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     </style>
 </head>
-<body class="bg-corp-bg text-corp-primary font-sans antialiased">
+<body class="flex h-screen overflow-hidden text-slate-800">
 
-    <div class="max-w-[1400px] mx-auto p-6 lg:p-10">
-        
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-            <div>
-                <h1 class="text-3xl font-bold tracking-tight text-slate-900">Área Digital</h1>
-                <p class="text-sm text-slate-500 mt-1">Gestión Táctica y Operativa de Proyectos</p>
-            </div>
-            
+    <aside class="w-64 bg-slate-900 text-white flex flex-col transition-all duration-300 z-20 shrink-0 hidden md:flex">
+        <div class="h-20 flex items-center px-6 border-b border-slate-800">
             <div class="flex items-center gap-3">
-                <button onclick="abrirPanelNuevaTarea()" class="bg-corp-accent hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-sm">
-                    <i class="ph ph-plus-circle text-lg"></i>
-                    Nueva Tarea
-                </button>
-                <div class="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden">
-                    <img src="https://placehold.co/40x40/333/fff?text=J" alt="User" class="w-full h-full object-cover">
+                <div class="w-8 h-8 rounded-lg bg-tinka-red flex items-center justify-center font-bold text-white shadow-lg">T</div>
+                <div>
+                    <h1 class="font-bold text-sm tracking-wide">ÁREA DIGITAL</h1>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest">Orquestador</p>
                 </div>
-            </div>
-        </header>
-
-        <!-- ZONA 1: Táctica (KPIs) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <!-- KPI 1 (Todos) -->
-            <div onclick="aplicarFiltroKPI('todos', this)" class="clickable-kpi bg-corp-card rounded-2xl p-6 shadow-sm flex flex-col active-filter">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="text-sm font-medium text-slate-500">Total Tareas Activas</span>
-                    <div class="p-2 bg-blue-50 rounded-lg text-corp-accent"><i class="ph ph-stack text-xl"></i></div>
-                </div>
-                <div class="text-3xl font-bold text-slate-900 mb-1">42</div>
-                <span class="text-xs text-slate-400 mt-2">Clic para ver todas</span>
-            </div>
-
-            <!-- KPI 2 (Hechas) -->
-            <div onclick="aplicarFiltroKPI('hecho', this)" class="clickable-kpi bg-corp-card rounded-2xl p-6 shadow-sm flex flex-col">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="text-sm font-medium text-slate-500">Hechas (Cierre Semanal)</span>
-                    <div class="p-2 bg-emerald-50 rounded-lg text-status-done"><i class="ph ph-check-circle text-xl"></i></div>
-                </div>
-                <div class="text-3xl font-bold text-slate-900 mb-1">18</div>
-                 <span class="text-xs text-slate-400 mt-2">Clic para filtrar</span>
-            </div>
-
-            <!-- KPI 3 (Alertas) -->
-            <div onclick="aplicarFiltroKPI('urgente', this)" class="clickable-kpi bg-corp-card rounded-2xl p-6 shadow-sm flex flex-col border border-red-50 hover:border-red-200">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="text-sm font-medium text-red-600">Alertas Rojas (Atrasos)</span>
-                    <div class="p-2 bg-red-50 rounded-lg text-urgent"><i class="ph ph-warning-circle text-xl"></i></div>
-                </div>
-                <div class="text-3xl font-bold text-slate-900 mb-1">3</div>
-                <span class="text-xs text-slate-400 mt-2">Clic para filtrar</span>
-            </div>
-
-            <!-- KPI 4 (En Progreso) -->
-            <div onclick="aplicarFiltroKPI('progreso', this)" class="clickable-kpi bg-corp-card rounded-2xl p-6 shadow-sm flex flex-col">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="text-sm font-medium text-slate-500">En Progreso</span>
-                    <div class="p-2 bg-amber-50 rounded-lg text-status-progress"><i class="ph ph-spinner-gap text-xl"></i></div>
-                </div>
-                <div class="text-3xl font-bold text-slate-900">15</div>
-                 <span class="text-xs text-slate-400 mt-2">Clic para filtrar</span>
             </div>
         </div>
+        
+        <nav class="flex-1 py-6 px-4 space-y-1">
+            <a href="#" class="flex items-center gap-3 px-3 py-2.5 bg-tinka-red/10 text-tinka-red rounded-lg font-medium text-sm border border-tinka-red/20 transition-colors">
+                <i class="ph ph-kanban text-lg"></i> Registro Operativo
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg font-medium text-sm transition-colors">
+                <i class="ph ph-books text-lg"></i> Wiki & Docs
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg font-medium text-sm transition-colors">
+                <i class="ph ph-chart-line-up text-lg"></i> Analíticas
+            </a>
+        </nav>
+        
+        <div class="p-4 border-t border-slate-800">
+            <div class="flex items-center gap-3 px-3 py-2">
+                <img src="https://placehold.co/40x40/333/fff?text=AD" class="w-9 h-9 rounded-full bg-slate-700">
+                <div>
+                    <p class="text-sm font-medium">ArquiDash</p>
+                    <p class="text-xs text-slate-400">Consultor Senior</p>
+                </div>
+            </div>
+        </div>
+    </aside>
 
-        <!-- ZONA 2: Gestión de Equipo -->
-        <div class="mb-10 bg-corp-card rounded-2xl p-6 shadow-sm border border-slate-100">
-            <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <i class="ph ph-users-three text-slate-400"></i> Salud del Equipo (Carga de Trabajo)
-            </h2>
+    <main class="flex-1 h-screen overflow-y-auto bg-slate-50/50">
+        <div class="max-w-[1400px] mx-auto p-6 lg:p-10">
             
-            <!-- Avatares y Alertas -->
-            <div class="flex gap-6 mb-6">
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="filtrarTablaOwner('Valeria')">
-                    <div class="relative">
-                        <div class="w-12 h-12 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm group-hover:scale-110 transition-transform">V</div>
-                    </div>
-                    <span class="text-xs font-semibold text-slate-600">Valeria</span>
+            <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-slate-900">Registro Operativo</h2>
+                    <p class="text-sm text-slate-500 mt-1">Visión general y gestión de iniciativas</p>
                 </div>
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="filtrarTablaOwner('Paola')">
-                    <div class="relative">
-                        <div class="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm group-hover:scale-110 transition-transform">P</div>
-                        <span class="absolute top-0 right-0 flex h-3 w-3">
-                            <span class="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500 border border-white"></span>
-                        </span>
-                    </div>
-                    <span class="text-xs font-semibold text-red-600">Paola (Alerta)</span>
+                
+                <div class="flex items-center gap-3">
+                    <button onclick="limpiarFiltros()" class="px-4 py-2.5 text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-sm">
+                        <i class="ph ph-arrows-counter-clockwise"></i> Reset Filtros
+                    </button>
+                    <button onclick="abrirPanelNuevaTarea()" class="bg-tinka-red hover:bg-red-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-sm">
+                        <i class="ph ph-plus-bold"></i> Nueva Tarea
+                    </button>
                 </div>
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="filtrarTablaOwner('Anto')">
-                    <div class="relative">
-                        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm group-hover:scale-110 transition-transform">A</div>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- KPI 1 -->
+                <div onclick="limpiarFiltros()" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover-card transition-all flex flex-col cursor-pointer ring-2 ring-transparent hover:ring-blue-100">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-sm font-medium text-slate-500">Total Iniciativas</span>
+                        <div class="p-2 bg-blue-50 rounded-lg text-blue-600"><i class="ph ph-stack text-xl"></i></div>
                     </div>
-                    <span class="text-xs font-semibold text-slate-600">Anto</span>
+                    <div class="text-3xl font-bold text-slate-900 mb-1" id="kpi-total">0</div>
+                    <span class="text-xs text-slate-500 font-medium">Clic para ver todas</span>
                 </div>
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="filtrarTablaOwner('Ruben')">
-                    <div class="relative">
-                        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm group-hover:scale-110 transition-transform">R</div>
+
+                <!-- KPI 2 -->
+                <div onclick="filtrarPorEstado('hecho')" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover-card transition-all flex flex-col cursor-pointer ring-2 ring-transparent hover:ring-emerald-100">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-sm font-medium text-slate-500">Completadas</span>
+                        <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600"><i class="ph ph-check-circle text-xl"></i></div>
                     </div>
-                    <span class="text-xs font-semibold text-slate-600">Ruben</span>
+                    <div class="text-3xl font-bold text-slate-900 mb-1" id="kpi-hecho">0</div>
+                    <span class="text-xs text-slate-500 font-medium">Clic para filtrar</span>
                 </div>
-                <!-- Botón Limpiar Filtros -->
-                <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="limpiarFiltros()">
-                    <div class="relative">
-                        <div class="w-12 h-12 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center font-bold text-lg border-2 border-dashed border-slate-300 group-hover:bg-slate-100 transition-colors">
-                            <i class="ph ph-arrows-counter-clockwise"></i>
+
+                <!-- KPI 3 -->
+                <div onclick="filtrarPorEstado('progreso')" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover-card transition-all flex flex-col cursor-pointer ring-2 ring-transparent hover:ring-amber-100">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-sm font-medium text-slate-500">En Progreso</span>
+                        <div class="p-2 bg-amber-50 rounded-lg text-amber-500"><i class="ph ph-spinner-gap text-xl"></i></div>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-900 mb-1" id="kpi-progreso">0</div>
+                    <span class="text-xs text-slate-500 font-medium">Clic para filtrar</span>
+                </div>
+
+                <!-- KPI 4 -->
+                <div onclick="filtrarPorPrioridad('alta')" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover-card transition-all flex flex-col cursor-pointer ring-2 ring-transparent hover:ring-red-100">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-sm font-medium text-red-500">Alertas Alta Prioridad</span>
+                        <div class="p-2 bg-red-50 rounded-lg text-red-600"><i class="ph ph-warning-circle text-xl"></i></div>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-900 mb-1" id="kpi-alta">0</div>
+                    <span class="text-xs text-red-500 font-medium">Clic para filtrar</span>
+                </div>
+            </div>
+            
+            <div class="mb-8 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i class="ph ph-users-three text-slate-400 text-xl"></i> Salud del Equipo (Carga de Trabajo)
+                    </h2>
+                    <span class="text-xs text-slate-400"><i class="ph ph-info"></i> Haz clic en avatares o barras para filtrar</span>
+                </div>
+                
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <!-- Avatares -->
+                    <div class="flex flex-wrap gap-6 items-center border-b lg:border-b-0 lg:border-r border-slate-100 pb-6 lg:pb-0 lg:pr-8 shrink-0">
+                        <!-- Paola -->
+                        <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="filtrarPorResponsable('Paola')">
+                            <div class="relative">
+                                <div class="w-14 h-14 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xl border-2 border-white shadow-sm group-hover:scale-110 transition-transform">P</div>
+                                <span class="absolute top-0 right-0 flex h-3.5 w-3.5 hidden" id="alerta-paola">
+                                    <span class="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-white"></span>
+                                </span>
+                            </div>
+                            <span class="text-xs font-semibold text-slate-600">Paola</span>
+                        </div>
+                        <!-- Valeria -->
+                        <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="filtrarPorResponsable('Valeria')">
+                            <div class="relative">
+                                <div class="w-14 h-14 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center font-bold text-xl border-2 border-white shadow-sm group-hover:scale-110 transition-transform">V</div>
+                                <span class="absolute top-0 right-0 flex h-3.5 w-3.5 hidden" id="alerta-valeria">
+                                    <span class="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-white"></span>
+                                </span>
+                            </div>
+                            <span class="text-xs font-semibold text-slate-600">Valeria</span>
+                        </div>
+                        <!-- Ruben -->
+                        <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="filtrarPorResponsable('Ruben')">
+                            <div class="relative">
+                                <div class="w-14 h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xl border-2 border-white shadow-sm group-hover:scale-110 transition-transform">R</div>
+                                <span class="absolute top-0 right-0 flex h-3.5 w-3.5 hidden" id="alerta-ruben">
+                                    <span class="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-white"></span>
+                                </span>
+                            </div>
+                            <span class="text-xs font-semibold text-slate-600">Ruben</span>
+                        </div>
+                        <!-- Anto -->
+                        <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="filtrarPorResponsable('Anto')">
+                            <div class="relative">
+                                <div class="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xl border-2 border-white shadow-sm group-hover:scale-110 transition-transform">A</div>
+                                <span class="absolute top-0 right-0 flex h-3.5 w-3.5 hidden" id="alerta-anto">
+                                    <span class="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border-2 border-white"></span>
+                                </span>
+                            </div>
+                            <span class="text-xs font-semibold text-slate-600">Anto</span>
                         </div>
                     </div>
-                    <span class="text-xs font-medium text-slate-500">Limpiar</span>
-                </div>
-            </div>
 
-            <!-- Gráfico de Carga Apilado (interactivo) -->
-            <div class="w-full h-[200px]">
-                <canvas id="workloadChart"></canvas>
-            </div>
-            <p class="text-xs text-slate-400 mt-2 text-center"><i class="ph ph-info"></i> Haz clic en las barras del gráfico para filtrar la tabla inferior por Persona y Prioridad.</p>
-        </div>
-
-        <!-- ZONA 3: Operativa (Tabla de Trabajo) -->
-        <div class="bg-corp-card rounded-2xl shadow-sm border border-slate-100 overflow-hidden" id="seccion-tabla">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
-                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <i class="ph ph-list-dashes text-slate-400"></i> Registro Operativo
-                    <span id="indicador-filtro" class="text-xs font-normal text-corp-accent bg-blue-50 px-2 py-1 rounded hidden">Filtrado</span>
-                </h2>
-                <!-- Buscador Simple -->
-                <div class="relative">
-                    <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" id="buscador-general" onkeyup="filtrarPorTexto()" placeholder="Buscar tarea..." class="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm w-64 focus:outline-none focus:border-corp-accent focus:ring-1 focus:ring-corp-accent">
-                </div>
-            </div>
-            
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse" id="tabla-tareas">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold">
-                            <th class="p-4 py-3 w-48">Proyecto</th>
-                            <th class="p-4 py-3 w-64">Tarea Específica</th>
-                            <!-- Columna Responsable con Filtro -->
-                            <th class="p-4 py-3">
-                                Responsable<br>
-                                <select class="filter-select w-full" onchange="aplicarFiltrosColumnas()" id="filtro-col-responsable">
-                                    <option value="todos">Todos</option>
-                                    <option value="Paola">Paola</option>
-                                    <option value="Valeria">Valeria</option>
-                                    <option value="Anto">Anto</option>
-                                    <option value="Ruben">Ruben</option>
-                                </select>
-                            </th>
-                            <!-- Columna Estado con Filtro -->
-                            <th class="p-4 py-3">
-                                Estado<br>
-                                <select class="filter-select w-full" onchange="aplicarFiltrosColumnas()" id="filtro-col-estado">
-                                    <option value="todos">Todos</option>
-                                    <option value="hecho">Hecho</option>
-                                    <option value="progreso">En Progreso</option>
-                                    <option value="monitoreo">Monitoreo</option>
-                                </select>
-                            </th>
-                            <!-- Columna Prioridad con Filtro -->
-                            <th class="p-4 py-3">
-                                Prioridad<br>
-                                <select class="filter-select w-full" onchange="aplicarFiltrosColumnas()" id="filtro-col-prioridad">
-                                    <option value="todos">Todas</option>
-                                    <option value="alta">Alta</option>
-                                    <option value="media">Media</option>
-                                    <option value="baja">Baja</option>
-                                </select>
-                            </th>
-                            <th class="p-4 py-3 w-64">Notas / Siguientes Pasos</th>
-                            <th class="p-4 py-3 text-right">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-sm divide-y divide-slate-100">
-                        <!-- Fila 1 (Urgente) -->
-                        <tr class="row-hover transition-colors" data-status="monitoreo" data-priority="alta" data-owner="Paola">
-                            <td class="p-4 font-medium text-slate-900 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-indigo-500"></div> Rentabilidad IA</td>
-                            <td class="p-4 text-slate-600 tarea-desc">Completar info para entender negocio</td>
-                            <td class="p-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">P</div>
-                                    <span class="text-slate-700 owner-name">Paola</span>
-                                </div>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium border border-slate-200 flex w-max items-center gap-1 status-badge">
-                                    <i class="ph ph-eye"></i> Monitoreo
-                                </span>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2.5 py-1 bg-red-50 text-red-600 rounded-md text-xs font-bold border border-red-100 flex w-max items-center gap-1 prio-badge">
-                                    <i class="ph ph-warning"></i> Alta
-                                </span>
-                            </td>
-                            <td class="p-4 text-xs text-slate-500 italic notas-cell">Pendiente enviar lista de comisiones a proveedores.</td>
-                            <td class="p-4 text-right">
-                                <button onclick="abrirPanel(this)" class="text-corp-accent font-medium hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors text-xs">Gestionar</button>
-                            </td>
-                        </tr>
-
-                        <!-- Fila 2 -->
-                        <tr class="row-hover transition-colors" data-status="progreso" data-priority="media" data-owner="Valeria">
-                            <td class="p-4 font-medium text-slate-900 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-pink-500"></div> Nueva web</td>
-                            <td class="p-4 text-slate-600 tarea-desc">Plan tracking nueva web</td>
-                            <td class="p-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center text-xs font-bold">V</div>
-                                    <span class="text-slate-700 owner-name">Valeria</span>
-                                </div>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-medium border border-amber-200 flex w-max items-center gap-1 status-badge">
-                                    <i class="ph ph-spinner"></i> En Progreso
-                                </span>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-medium border border-slate-200 prio-badge">Media</span>
-                            </td>
-                            <td class="p-4 text-xs text-slate-500 italic notas-cell">-</td>
-                            <td class="p-4 text-right">
-                                <button onclick="abrirPanel(this)" class="text-corp-accent font-medium hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors text-xs">Gestionar</button>
-                            </td>
-                        </tr>
-
-                        <!-- Fila 3 -->
-                        <tr class="row-hover transition-colors" data-status="progreso" data-priority="alta" data-owner="Ruben">
-                            <td class="p-4 font-medium text-slate-900 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-emerald-500"></div> Whatsapp</td>
-                            <td class="p-4 text-slate-600 tarea-desc">Proyecto Migración: FHU</td>
-                            <td class="p-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">R</div>
-                                    <span class="text-slate-700 owner-name">Ruben</span>
-                                </div>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-medium border border-amber-200 flex w-max items-center gap-1 status-badge">
-                                    <i class="ph ph-spinner"></i> En Progreso
-                                </span>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2.5 py-1 bg-red-50 text-red-600 rounded-md text-xs font-bold border border-red-100 flex w-max items-center gap-1 prio-badge">
-                                    <i class="ph ph-warning"></i> Alta
-                                </span>
-                            </td>
-                             <td class="p-4 text-xs text-slate-500 italic notas-cell">Esperando OK de arquitectura técnica.</td>
-                            <td class="p-4 text-right">
-                                <button onclick="abrirPanel(this)" class="text-corp-accent font-medium hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors text-xs">Gestionar</button>
-                            </td>
-                        </tr>
-                        
-                        <!-- Fila 4 -->
-                        <tr class="row-hover transition-colors" data-status="hecho" data-priority="alta" data-owner="Paola">
-                            <td class="p-4 font-medium text-slate-900 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-pink-500"></div> Nueva web</td>
-                            <td class="p-4 text-slate-600 tarea-desc">Alcance bot IA (web)</td>
-                            <td class="p-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">P</div>
-                                    <span class="text-slate-700 owner-name">Paola</span>
-                                </div>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium border border-emerald-200 flex w-max items-center gap-1 status-badge">
-                                    <i class="ph ph-check"></i> Hecho
-                                </span>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2.5 py-1 bg-red-50 text-red-600 rounded-md text-xs font-bold border border-red-100 flex w-max items-center gap-1 prio-badge">
-                                    <i class="ph ph-warning"></i> Alta
-                                </span>
-                            </td>
-                             <td class="p-4 text-xs text-slate-500 italic notas-cell">Realizado, pendiente enviar a proyectos.</td>
-                            <td class="p-4 text-right">
-                                <button onclick="abrirPanel(this)" class="text-corp-accent font-medium hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors text-xs">Gestionar</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- PANEL LATERAL (OFFCANVAS) -->
-    <div id="panel-overlay" onclick="cerrarPanel()"></div>
-    <div id="panel-gestion">
-        <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
-            <div>
-                <h3 class="font-bold text-slate-900" id="panel-titulo">Gestionar Tarea</h3>
-                <p class="text-xs text-slate-500" id="panel-proyecto-nombre">Actualización de estado</p>
-            </div>
-            <button onclick="cerrarPanel()" class="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition"><i class="ph ph-x text-lg"></i></button>
-        </div>
-        
-        <div class="p-6 flex-1">
-            <form id="form-tarea" onsubmit="event.preventDefault(); guardarCambios();">
-                <div class="mb-5" id="input-proyecto-container" style="display: none;">
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Nombre del Proyecto</label>
-                    <input type="text" id="input-proyecto" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-corp-accent focus:outline-none">
-                </div>
-                <div class="mb-5" id="input-tarea-container" style="display: none;">
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Descripción de la Tarea</label>
-                    <input type="text" id="input-tarea" class="w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-corp-accent focus:outline-none">
-                </div>
-                <div class="mb-5">
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Responsable</label>
-                    <select id="select-owner" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-corp-accent focus:outline-none">
-                        <option value="Paola">Paola</option>
-                        <option value="Valeria">Valeria</option>
-                        <option value="Anto">Anto</option>
-                        <option value="Ruben">Ruben</option>
-                    </select>
-                </div>
-                <div class="mb-5">
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Prioridad</label>
-                    <select id="select-priority" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-corp-accent focus:outline-none">
-                        <option value="alta">Alta</option>
-                        <option value="media">Media</option>
-                        <option value="baja">Baja</option>
-                    </select>
-                </div>
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Cambiar Estado</label>
-                    <div class="flex gap-2">
-                        <!-- Usamos type button y llamamos la lógica directamente -->
-                        <button type="button" id="btn-estado-progreso" onclick="actualizarBotonesEstado('En progreso')" class="flex-1 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-bold hover:bg-amber-100 transition">En Progreso</button>
-                        <button type="button" id="btn-estado-hecho" onclick="actualizarBotonesEstado('Hecho')" class="flex-1 py-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-lg text-xs font-bold hover:bg-slate-100 transition">Completado</button>
+                    <!-- Gráfico Chart.js -->
+                    <div class="flex-1 h-[140px] flex items-center justify-center">
+                        <canvas id="workloadChart"></canvas>
                     </div>
                 </div>
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Notas / Siguientes Pasos</label>
-                    <textarea id="input-notas" class="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:border-corp-accent h-24 resize-none" placeholder="Añadir notas o bitácora..."></textarea>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-10" id="tabla-registro">
+                <!-- Buscador de la tabla -->
+                <div class="p-5 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
+                    <div class="relative w-full md:w-96">
+                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+                        <input type="text" id="buscador-global" onkeyup="aplicarFiltrosGlobales()" placeholder="Buscar proyecto o notas..." class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-tinka-red focus:ring-1 focus:ring-tinka-red bg-white transition-shadow">
+                    </div>
+                    
+                    <!-- Selectores de Filtro Combinado -->
+                    <div class="flex gap-3 w-full md:w-auto">
+                        <select id="filtro-responsable" onchange="aplicarFiltrosGlobales()" class="p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-600 font-medium w-full md:w-40 focus:outline-none focus:border-slate-300">
+                            <option value="todos">Todos los Responsables</option>
+                            <option value="Paola">Paola</option>
+                            <option value="Valeria">Valeria</option>
+                            <option value="Ruben">Ruben</option>
+                            <option value="Anto">Anto</option>
+                        </select>
+                        <select id="filtro-estado" onchange="aplicarFiltrosGlobales()" class="p-2.5 border border-slate-200 rounded-lg text-sm bg-white text-slate-600 font-medium w-full md:w-36 focus:outline-none focus:border-slate-300">
+                            <option value="todos">Todos los Estados</option>
+                            <option value="monitoreo">Monitoreo</option>
+                            <option value="progreso">En Progreso</option>
+                            <option value="hecho">Hecho</option>
+                        </select>
+                    </div>
                 </div>
-            </form>
-        </div>
-
-        <div class="p-5 border-t border-slate-100 bg-slate-50 sticky bottom-0">
-            <button type="button" onclick="guardarCambios()" class="w-full bg-corp-primary hover:bg-slate-800 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm">
-                Guardar Cambios
-            </button>
-        </div>
-    </div>
-
-    <script>
-        /* ==============================================================
-           1. Inicialización de Gráficos (Chart.js)
-           ============================================================== */
-        const ctxWorkload = document.getElementById('workloadChart').getContext('2d');
-        const labelsNombres = ['Paola', 'Valeria', 'Anto', 'Ruben'];
-        
-        const workloadChart = new Chart(ctxWorkload, {
-            type: 'bar',
-            data: {
-                labels: labelsNombres,
-                datasets: [
-                    // Orden de índices: 0 = Alta, 1 = Media, 2 = Baja
-                    { label: 'alta', data: [5, 1, 2, 3], backgroundColor: '#EF4444', borderRadius: 4 },
-                    { label: 'media', data: [3, 4, 3, 2], backgroundColor: '#F59E0B', borderRadius: 4 },
-                    { label: 'baja', data: [2, 3, 4, 1], backgroundColor: '#64748B', borderRadius: 4 }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="tabla-tareas">
+                        <thead>
+                            <tr class="bg-white text-slate-500 text-xs uppercase tracking-wider font-bold
